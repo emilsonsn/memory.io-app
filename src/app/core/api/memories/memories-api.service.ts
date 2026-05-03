@@ -6,6 +6,7 @@ import { ApiClientService } from '../api-client.service';
 export interface MemoryListFilters {
   categoryIds?: string[];
   withoutCategories?: boolean;
+  categoryPresence?: 'all' | 'without';
   text?: string;
   color?: string | null;
   createdFrom?: string;
@@ -26,6 +27,8 @@ export class MemoriesApiService {
     const params: Record<string, string | number | boolean> = { per_page: 100 };
 
     if (filters.withoutCategories) {
+      params['without_categories'] = true;
+    } else if (filters.categoryPresence === 'without') {
       params['without_categories'] = true;
     } else if (filters.categoryIds?.length) {
       params['category_ids'] = filters.categoryIds.join(',');

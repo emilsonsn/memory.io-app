@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Opcoes avancadas</h2>
+
+<mat-dialog-content>
+  <form class="advanced-filter-form" [formGroup]="form">
+    <section>
+      <h3>Filtros</h3>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Cor</mat-label>
+        <mat-select formControlName="color" panelClass="memory-filter-select-panel">
+          <mat-option value="">Todas</mat-option>
+          @for (color of data.colors; track color.value) {
+            <mat-option [value]="color.value">{{ color.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="date-grid">
+        <mat-form-field appearance="fill">
+          <mat-label>Alterada de</mat-label>
+          <input matInput [matDatepicker]="updatedFromPicker" formControlName="updatedFrom">
+          <mat-datepicker-toggle matIconSuffix [for]="updatedFromPicker" />
+          <mat-datepicker #updatedFromPicker />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Alterada ate</mat-label>
+          <input matInput [matDatepicker]="updatedToPicker" formControlName="updatedTo">
+          <mat-datepicker-toggle matIconSuffix [for]="updatedToPicker" />
+          <mat-datepicker #updatedToPicker />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Vence de</mat-label>
+          <input matInput [matDatepicker]="dueFromPicker" formControlName="dueFrom">
+          <mat-datepicker-toggle matIconSuffix [for]="dueFromPicker" />
+          <mat-datepicker #dueFromPicker />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Vence ate</mat-label>
+          <input matInput [matDatepicker]="dueToPicker" formControlName="dueTo">
+          <mat-datepicker-toggle matIconSuffix [for]="dueToPicker" />
+          <mat-datepicker #dueToPicker />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Categorias</mat-label>
+        <mat-select formControlName="categoryPresence" panelClass="memory-filter-select-panel">
+          <mat-option value="all">Todas</mat-option>
+          <mat-option value="without">Sem categoria</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    <section>
+      <h3>Ordenacao</h3>
+
+      <div class="sort-grid">
+        <mat-form-field appearance="fill">
+          <mat-label>Ordenar por</mat-label>
+          <mat-select formControlName="sortBy" panelClass="memory-filter-select-panel">
+            <mat-option value="created_at">Criacao</mat-option>
+            <mat-option value="updated_at">Atualizacao</mat-option>
+            <mat-option value="due_date">Vencimento</mat-option>
+            <mat-option value="title">Titulo</mat-option>
+            <mat-option value="color">Cor</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Direcao</mat-label>
+          <mat-select formControlName="sortDirection" panelClass="memory-filter-select-panel">
+            <mat-option value="desc">Decrescente</mat-option>
+            <mat-option value="asc">Crescente</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="clear()">Limpar avancados</button>
+  <button mat-button mat-dialog-close type="button">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="apply()">Aplicar</button>
+</mat-dialog-actions>

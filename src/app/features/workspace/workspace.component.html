@@ -1,71 +1,63 @@
 <main class="workspace">
   <header class="topbar">
     <div class="search-shell">
-      <label class="search-box" aria-label="Pesquisar memorias">
-        <fa-icon [icon]="icons.search" aria-hidden="true" />
+      <mat-form-field class="search-box" appearance="fill" subscriptSizing="dynamic">
+        <mat-label>Pesquisar</mat-label>
+        <fa-icon matPrefix [icon]="icons.search" aria-hidden="true" />
         <input
+          matInput
           type="search"
-          placeholder="Pesquisar"
           [value]="memoryFilters().text ?? ''"
           (input)="updateMemoryFilter('text', $any($event.target).value)"
         >
-      </label>
+      </mat-form-field>
 
       <div class="quick-filters">
-        <label>
-          Cor
-          <select [value]="memoryFilters().color ?? ''" (change)="updateMemoryFilter('color', $any($event.target).value)">
-            <option value="">Todas</option>
-            @for (color of colors(); track color.value) {
-              <option [value]="color.value">{{ color.label }}</option>
+        <mat-form-field class="category-filter" appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Categorias</mat-label>
+          <mat-select
+            multiple
+            panelClass="memory-filter-select-panel"
+            [value]="memoryFilters().categoryIds ?? []"
+            (selectionChange)="updateCategoryFilter($event.value)"
+          >
+            @for (category of sidebarCategories(); track category.id) {
+              <mat-option [value]="category.id">{{ categoryDisplay(category) }}</mat-option>
             }
-          </select>
-        </label>
+          </mat-select>
+        </mat-form-field>
 
-        <label>
-          Ordenar
-          <select [value]="memoryFilters().sortBy ?? 'created_at'" (change)="updateMemoryFilter('sortBy', $any($event.target).value)">
-            <option value="created_at">Criacao</option>
-            <option value="updated_at">Atualizacao</option>
-            <option value="due_date">Vencimento</option>
-            <option value="title">Titulo</option>
-            <option value="color">Cor</option>
-          </select>
-        </label>
+        <mat-form-field class="date-filter" appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Criada de</mat-label>
+          <input
+            matInput
+            [matDatepicker]="createdFromPicker"
+            [value]="filterDateValue(memoryFilters().createdFrom)"
+            (dateChange)="updateDateFilter('createdFrom', $event.value)"
+          >
+          <mat-datepicker-toggle matIconSuffix [for]="createdFromPicker" />
+          <mat-datepicker #createdFromPicker />
+        </mat-form-field>
 
-        <label>
-          Direcao
-          <select [value]="memoryFilters().sortDirection ?? 'desc'" (change)="updateMemoryFilter('sortDirection', $any($event.target).value)">
-            <option value="desc">Mais recentes</option>
-            <option value="asc">Mais antigas</option>
-          </select>
-        </label>
+        <mat-form-field class="date-filter" appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Criada ate</mat-label>
+          <input
+            matInput
+            [matDatepicker]="createdToPicker"
+            [value]="filterDateValue(memoryFilters().createdTo)"
+            (dateChange)="updateDateFilter('createdTo', $event.value)"
+          >
+          <mat-datepicker-toggle matIconSuffix [for]="createdToPicker" />
+          <mat-datepicker #createdToPicker />
+        </mat-form-field>
 
-        <details class="advanced-filter-menu">
-          <summary>Filtros</summary>
-          <div class="filter-popover">
-            <fieldset>
-              <legend>Criacao</legend>
-              <input type="date" [value]="memoryFilters().createdFrom ?? ''" (change)="updateMemoryFilter('createdFrom', $any($event.target).value)">
-              <input type="date" [value]="memoryFilters().createdTo ?? ''" (change)="updateMemoryFilter('createdTo', $any($event.target).value)">
-            </fieldset>
-
-            <fieldset>
-              <legend>Atualizacao</legend>
-              <input type="date" [value]="memoryFilters().updatedFrom ?? ''" (change)="updateMemoryFilter('updatedFrom', $any($event.target).value)">
-              <input type="date" [value]="memoryFilters().updatedTo ?? ''" (change)="updateMemoryFilter('updatedTo', $any($event.target).value)">
-            </fieldset>
-
-            <fieldset>
-              <legend>Vencimento</legend>
-              <input type="date" [value]="memoryFilters().dueFrom ?? ''" (change)="updateMemoryFilter('dueFrom', $any($event.target).value)">
-              <input type="date" [value]="memoryFilters().dueTo ?? ''" (change)="updateMemoryFilter('dueTo', $any($event.target).value)">
-            </fieldset>
-          </div>
-        </details>
+        <button mat-stroked-button type="button" (click)="openAdvancedFilters()">
+          <fa-icon [icon]="icons.sliders" aria-hidden="true" />
+          Avancados
+        </button>
 
         @if (hasMemoryFilters()) {
-          <button class="clear-filter-button" type="button" (click)="clearMemoryFilters()">Limpar</button>
+          <button mat-button type="button" (click)="clearMemoryFilters()">Limpar</button>
         }
       </div>
     </div>

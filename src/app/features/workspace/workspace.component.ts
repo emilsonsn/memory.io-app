@@ -9,14 +9,23 @@ import {
   faArrowRightFromBracket,
   faCopy,
   faFolderOpen,
+  faSliders,
   faSearch,
 } from '@fortawesome/free-solid-svg-icons';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
 import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { CategoryDialogComponent } from '../../shared/components/dialogs/category-dialog/category-dialog.component';
+import { AdvancedMemoryFiltersDialogComponent } from '../../shared/components/dialogs/advanced-memory-filters-dialog/advanced-memory-filters-dialog.component';
 import { MemoryDialogComponent } from '../../shared/components/dialogs/memory-dialog/memory-dialog.component';
 import {
   Category,
@@ -32,17 +41,22 @@ type MemoryFilterKey =
   | 'text'
   | 'color'
   | 'createdFrom'
-  | 'createdTo'
-  | 'updatedFrom'
-  | 'updatedTo'
-  | 'dueFrom'
-  | 'dueTo'
-  | 'sortBy'
-  | 'sortDirection';
+  | 'createdTo';
 
 @Component({
   selector: 'app-workspace',
-  imports: [CategoryDialogComponent, DatePipe, FontAwesomeModule, MemoryDialogComponent],
+  imports: [
+    CategoryDialogComponent,
+    DatePipe,
+    FontAwesomeModule,
+    MatButtonModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatNativeDateModule,
+    MatSelectModule,
+    MemoryDialogComponent,
+  ],
   templateUrl: './workspace.component.html',
   styleUrl: './workspace.component.scss',
 })
@@ -54,6 +68,7 @@ export class WorkspaceComponent implements OnInit {
   readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -71,6 +86,7 @@ export class WorkspaceComponent implements OnInit {
     folderOpen: faFolderOpen,
     logout: faArrowRightFromBracket,
     search: faSearch,
+    sliders: faSliders,
   };
   readonly memoryFilters = signal<MemoryListFilters>({
     sortBy: 'created_at',
@@ -209,6 +225,41 @@ export class WorkspaceComponent implements OnInit {
     this.loadMemories();
   }
 
+  updateDateFilter(key: 'createdFrom' | 'createdTo', value: Date | null): void {
+    this.updateMemoryFilter(key, this.formatDateForApi(value));
+  }
+
+  updateCategoryFilter(categoryIds: string[]): void {
+    this.memoryFilters.update((filters) => ({
+      ...filters,
+      categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
+    }));
+    this.loadMemories();
+  }
+
+  openAdvancedFilters(): void {
+    this.dialog.open(AdvancedMemoryFiltersDialogComponent, {
+      data: {
+        colors: this.colors(),
+        filters: this.memoryFilters(),
+      },
+      autoFocus: false,
+      panelClass: 'advanced-memory-filters-panel',
+      width: '620px',
+      maxWidth: 'calc(100vw - 32px)',
+    }).afterClosed().subscribe((filters: Partial<MemoryListFilters> | null | undefined) => {
+      if (!filters) {
+        return;
+      }
+
+      this.memoryFilters.update((currentFilters) => ({
+        ...currentFilters,
+        ...filters,
+      }));
+      this.loadMemories();
+    });
+  }
+
   clearMemoryFilters(): void {
     this.memoryFilters.set({
       sortBy: 'created_at',
@@ -222,6 +273,7 @@ export class WorkspaceComponent implements OnInit {
 
     return Boolean(
       filters.text
+      || filters.categoryIds?.length
       || filters.color
       || filters.createdFrom
       || filters.createdTo
@@ -359,6 +411,20 @@ export class WorkspaceComponent implements OnInit {
     return this.authStore.user()?.name?.trim().charAt(0).toUpperCase() || 'U';
   }
 
+  filterDateValue(value: string | undefined): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const [year, month, day] = value.split('-').map(Number);
+
+    if (!year || !month || !day) {
+      return null;
+    }
+
+    return new Date(year, month - 1, day);
+  }
+
   private closeAfterSave(): void {
     this.activeDialog.set(null);
     this.editingCategory.set(null);
@@ -387,6 +453,10 @@ export class WorkspaceComponent implements OnInit {
   private currentMemoryFilters(): MemoryListFilters {
     const categoryId = this.currentCategoryId();
     const filters = this.memoryFilters();
+
+    if (this.hasMemoryFilters()) {
+      return filters;
+    }
 
     const scopeFilters = categoryId
       ? { categoryIds: [categoryId] }
@@ -424,6 +494,18 @@ export class WorkspaceComponent implements OnInit {
     textarea.select();
     document.execCommand('copy');
     textarea.remove();
+  }
+
+  private formatDateForApi(value: Date | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 
   private extractError(error: HttpErrorResponse): string {
