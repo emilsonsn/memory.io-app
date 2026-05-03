@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import { UsersApiService } from '../../core/api/users/users-api.service';
 
 @Component({
@@ -14,6 +15,7 @@ export class RegisterComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly usersApi = inject(UsersApiService);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -41,7 +43,10 @@ export class RegisterComponent {
     this.error.set(null);
 
     this.usersApi.register(payload).subscribe({
-      next: () => void this.router.navigate(['/login']),
+      next: () => {
+        this.toastr.success('Usuario criado com sucesso.');
+        void this.router.navigate(['/login']);
+      },
       error: (error: HttpErrorResponse) => {
         const firstError = Object.values((error.error as { errors?: Record<string, string[]> })?.errors ?? {})[0]?.[0];
         this.error.set(firstError ?? 'Nao foi possivel criar o usuario agora.');

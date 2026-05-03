@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ToastrService } from 'ngx-toastr';
 import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../../models';
 
 @Component({
@@ -10,6 +11,7 @@ import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../.
 })
 export class MemoryDialogComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
+  private readonly toastr = inject(ToastrService);
 
   @Input({ required: true }) categories: Category[] = [];
   @Input({ required: true }) colors: ColorOption[] = [];
@@ -107,11 +109,12 @@ export class MemoryDialogComponent implements OnChanges {
 
     void this.copyToClipboard(content).then(() => {
       this.contentCopied = true;
+      this.toastr.success('Conteudo copiado.');
 
       window.setTimeout(() => {
         this.contentCopied = false;
       }, 1200);
-    });
+    }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
   }
 
   submit(): void {

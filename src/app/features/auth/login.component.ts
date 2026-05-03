@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
 
@@ -16,6 +17,7 @@ export class LoginComponent {
   private readonly authApi = inject(AuthApiService);
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -36,6 +38,7 @@ export class LoginComponent {
     this.authApi.login(this.form.getRawValue()).subscribe({
       next: (data) => {
         this.authStore.setSession(data);
+        this.toastr.success('Login realizado com sucesso.');
         void this.router.navigate(['/app']);
       },
       error: (error: HttpErrorResponse) => {

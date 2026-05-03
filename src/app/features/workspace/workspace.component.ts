@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
@@ -34,6 +35,7 @@ export class WorkspaceComponent implements OnInit {
   private readonly memoriesApi = inject(MemoriesApiService);
   readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -176,6 +178,7 @@ export class WorkspaceComponent implements OnInit {
         this.categories.update((categories) => editing
           ? categories.map((item) => item.id === category.id ? category : item)
           : [category, ...categories]);
+        this.toastr.success(editing ? 'Pasta atualizada com sucesso.' : 'Pasta criada com sucesso.');
         this.closeAfterSave();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
@@ -202,6 +205,7 @@ export class WorkspaceComponent implements OnInit {
 
     request.subscribe({
       next: () => {
+        this.toastr.success(editing ? 'Memoria atualizada com sucesso.' : 'Memoria criada com sucesso.');
         this.closeAfterSave();
         this.loadMemories();
       },
@@ -225,6 +229,7 @@ export class WorkspaceComponent implements OnInit {
           this.currentCategoryId.set(category.parent_id);
         }
 
+        this.toastr.success('Pasta excluida com sucesso.');
         this.loadMemories();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
@@ -239,7 +244,10 @@ export class WorkspaceComponent implements OnInit {
     }
 
     this.memoriesApi.delete(memory.id).subscribe({
-      next: () => this.memories.update((memories) => memories.filter((item) => item.id !== memory.id)),
+      next: () => {
+        this.memories.update((memories) => memories.filter((item) => item.id !== memory.id));
+        this.toastr.success('Memoria excluida com sucesso.');
+      },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
     });
   }
@@ -249,18 +257,20 @@ export class WorkspaceComponent implements OnInit {
 
     void this.copyToClipboard(memory.content).then(() => {
       this.copiedMemoryId.set(memory.id);
+      this.toastr.success('Conteudo copiado.');
 
       window.setTimeout(() => {
         if (this.copiedMemoryId() === memory.id) {
           this.copiedMemoryId.set(null);
         }
       }, 1200);
-    });
+    }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
   }
 
   logout(): void {
     this.authApi.logout().subscribe({ error: () => undefined });
     this.authStore.clear();
+    this.toastr.success('Sessao encerrada com sucesso.');
     void this.router.navigate(['/login']);
   }
 
