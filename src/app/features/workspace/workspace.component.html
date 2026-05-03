@@ -65,7 +65,18 @@
         <article class="memory-card" role="button" tabindex="0" (click)="openEditMemory(memory)" (keyup.enter)="openEditMemory(memory)">
           <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
           <h2>{{ memory.title }}</h2>
-          <p>{{ memory.content }}</p>
+          <div class="memory-content">
+            <button
+              class="copy-memory-button"
+              type="button"
+              [attr.aria-label]="copiedMemoryId() === memory.id ? 'Conteudo copiado' : 'Copiar conteudo'"
+              [title]="copiedMemoryId() === memory.id ? 'Copiado' : 'Copiar conteudo'"
+              (click)="copyMemoryContent(memory, $event)"
+            >
+              <span aria-hidden="true"></span>
+            </button>
+            <p>{{ memory.content }}</p>
+          </div>
           <div class="tag-row">
             @for (category of memory.categories; track category.id) {
               <span class="tag">{{ category.label }}</span>

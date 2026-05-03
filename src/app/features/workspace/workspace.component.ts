@@ -45,6 +45,7 @@ export class WorkspaceComponent implements OnInit {
   readonly memories = signal<Memory[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
+  readonly copiedMemoryId = signal<string | null>(null);
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -243,6 +244,20 @@ export class WorkspaceComponent implements OnInit {
     });
   }
 
+  copyMemoryContent(memory: Memory, event: Event): void {
+    event.stopPropagation();
+
+    void this.copyToClipboard(memory.content).then(() => {
+      this.copiedMemoryId.set(memory.id);
+
+      window.setTimeout(() => {
+        if (this.copiedMemoryId() === memory.id) {
+          this.copiedMemoryId.set(null);
+        }
+      }, 1200);
+    });
+  }
+
   logout(): void {
     this.authApi.logout().subscribe({ error: () => undefined });
     this.authStore.clear();
@@ -283,6 +298,22 @@ export class WorkspaceComponent implements OnInit {
 
   private findCategory(categoryId: string): Category | null {
     return this.categories().find((category) => category.id === categoryId) ?? null;
+  }
+
+  private async copyToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
   }
 
   private extractError(error: HttpErrorResponse): string {

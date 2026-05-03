@@ -126,17 +126,70 @@
 }
 
 .folder-card p,
-.memory-card p {
+.memory-content p {
   color: var(--muted);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-.memory-card p {
+.memory-content {
+  position: relative;
+}
+
+.memory-content p {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 7;
+  padding-right: 38px;
+}
+
+.copy-memory-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--muted);
+}
+
+.copy-memory-button:hover {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+}
+
+.copy-memory-button span {
+  position: relative;
+  width: 15px;
+  height: 17px;
+}
+
+.copy-memory-button span::before,
+.copy-memory-button span::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 12px;
+  border: 1.8px solid currentColor;
+  border-radius: 3px;
+}
+
+.copy-memory-button span::before {
+  top: 0;
+  left: 4px;
+}
+
+.copy-memory-button span::after {
+  right: 4px;
+  bottom: 0;
+  background: inherit;
 }
 
 .folder-icon {
