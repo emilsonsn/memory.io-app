@@ -217,7 +217,14 @@ textarea:focus {
   gap: 4px;
   max-height: calc(100vh - 166px);
   overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;  
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
+
 
 .sidebar-root,
 .sidebar-item {
