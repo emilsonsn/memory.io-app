@@ -41,14 +41,45 @@
           </label>
         </div>
 
-        <label>
-          Pastas
-          <select formControlName="category_ids" multiple>
-            @for (category of categories; track category.id) {
-              <option [ngValue]="category.id">{{ categoryDisplay(category) }}</option>
-            }
-          </select>
-        </label>
+        <div class="category-field">
+          <span class="field-label">Pastas</span>
+
+          <button
+            class="category-select-trigger"
+            type="button"
+            [attr.aria-expanded]="categoriesOpen"
+            (click)="toggleCategories()"
+          >
+            <span>{{ categorySummary() }}</span>
+            <span class="select-chevron" aria-hidden="true">⌄</span>
+          </button>
+
+          @if (categoriesOpen) {
+            <div class="category-select-panel">
+              @for (category of categories; track category.id) {
+                <label class="category-option">
+                  <input
+                    type="checkbox"
+                    [checked]="isCategorySelected(category.id)"
+                    (change)="toggleCategory(category.id)"
+                  >
+                  <span>{{ categoryDisplay(category) }}</span>
+                </label>
+              }
+            </div>
+          }
+
+          @if (selectedCategories().length > 0) {
+            <div class="selected-category-list" aria-label="Pastas selecionadas">
+              @for (category of selectedCategories(); track category.id) {
+                <button class="category-chip" type="button" (click)="toggleCategory(category.id)">
+                  <span>{{ categoryDisplay(category) }}</span>
+                  <span aria-hidden="true">×</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
       </section>
     }
 

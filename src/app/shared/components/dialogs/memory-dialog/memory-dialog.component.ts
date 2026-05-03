@@ -21,6 +21,7 @@ export class MemoryDialogComponent implements OnChanges {
   @Output() saveMemory = new EventEmitter<MemoryPayload>();
 
   advancedOpen = false;
+  categoriesOpen = false;
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],
@@ -33,6 +34,7 @@ export class MemoryDialogComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['memory'] || changes['defaultCategoryId']) {
       this.advancedOpen = false;
+      this.categoriesOpen = false;
 
       this.form.reset({
         title: this.memory?.title ?? '',
@@ -48,6 +50,45 @@ export class MemoryDialogComponent implements OnChanges {
 
   toggleAdvanced(): void {
     this.advancedOpen = !this.advancedOpen;
+
+    if (!this.advancedOpen) {
+      this.categoriesOpen = false;
+    }
+  }
+
+  toggleCategories(): void {
+    this.categoriesOpen = !this.categoriesOpen;
+  }
+
+  toggleCategory(categoryId: string): void {
+    const selectedIds = this.form.controls.category_ids.value ?? [];
+    const nextSelectedIds = selectedIds.includes(categoryId)
+      ? selectedIds.filter((selectedId) => selectedId !== categoryId)
+      : [...selectedIds, categoryId];
+
+    this.form.controls.category_ids.setValue(nextSelectedIds);
+    this.form.controls.category_ids.markAsDirty();
+    this.form.controls.category_ids.markAsTouched();
+  }
+
+  isCategorySelected(categoryId: string): boolean {
+    return (this.form.controls.category_ids.value ?? []).includes(categoryId);
+  }
+
+  selectedCategories(): Category[] {
+    const selectedIds = this.form.controls.category_ids.value ?? [];
+
+    return this.categories.filter((category) => selectedIds.includes(category.id));
+  }
+
+  categorySummary(): string {
+    const total = this.selectedCategories().length;
+
+    if (total === 0) {
+      return 'Nenhuma pasta selecionada';
+    }
+
+    return total === 1 ? '1 pasta selecionada' : `${total} pastas selecionadas`;
   }
 
   categoryDisplay(category: Category): string {
