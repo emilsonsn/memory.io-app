@@ -15,6 +15,7 @@ export class MemoryDialogComponent implements OnChanges {
   @Input({ required: true }) colors: ColorOption[] = [];
   @Input() memory: Memory | null = null;
   @Input() defaultCategoryId: string | null = null;
+  @Input() defaultColor: NoteColor | null = null;
   @Input() saving = false;
 
   @Output() closeDialog = new EventEmitter<void>();
@@ -32,14 +33,14 @@ export class MemoryDialogComponent implements OnChanges {
   });
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['memory'] || changes['defaultCategoryId']) {
+    if (changes['memory'] || changes['defaultCategoryId'] || changes['defaultColor']) {
       this.advancedOpen = false;
       this.categoriesOpen = false;
 
       this.form.reset({
         title: this.memory?.title ?? '',
         content: this.memory?.content ?? '',
-        color: this.memory?.color ?? null,
+        color: this.memory ? this.memory.color : this.defaultColor,
         due_date: this.toInputDate(this.memory?.due_date ?? null),
         category_ids: this.memory
           ? this.memory.categories.map((category) => category.id)

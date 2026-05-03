@@ -16,6 +16,7 @@ import {
   ColorOption,
   Memory,
   MemoryPayload,
+  NoteColor,
 } from '../../shared/models';
 
 type DialogType = 'category' | 'memory' | null;
@@ -73,6 +74,10 @@ export class WorkspaceComponent implements OnInit {
 
   readonly visibleMemories = computed(() => {
     return this.memories();
+  });
+
+  readonly currentDefaultMemoryColor = computed<NoteColor | null>(() => {
+    return this.currentCategory()?.color ?? null;
   });
 
   ngOnInit(): void {
