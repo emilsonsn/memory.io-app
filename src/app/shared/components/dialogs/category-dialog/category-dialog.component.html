@@ -5,7 +5,9 @@
         <h2>{{ category ? 'Editar categoria' : 'Nova categoria' }}</h2>
         <p class="muted">{{ category ? 'Atualize a categoria desta biblioteca.' : 'Crie uma categoria para organizar suas memorias.' }}</p>
       </div>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">×</button>
+      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">
+        <fa-icon [icon]="icons.close" aria-hidden="true" />
+      </button>
     </header>
 
     <div class="form-stack">

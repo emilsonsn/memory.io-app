@@ -146,33 +146,6 @@
   color: var(--text);
 }
 
-.copy-memory-button span {
-  position: relative;
-  width: 15px;
-  height: 17px;
-}
-
-.copy-memory-button span::before,
-.copy-memory-button span::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 12px;
-  border: 1.8px solid currentColor;
-  border-radius: 3px;
-}
-
-.copy-memory-button span::before {
-  top: 0;
-  left: 4px;
-}
-
-.copy-memory-button span::after {
-  right: 4px;
-  bottom: 0;
-  background: inherit;
-}
-
 .folder-icon {
   width: 54px;
   height: 38px;

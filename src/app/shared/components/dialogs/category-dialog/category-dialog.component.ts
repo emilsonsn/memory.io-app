@@ -1,10 +1,12 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Category, CategoryPayload, ColorOption, NoteColor } from '../../../models';
 
 @Component({
   selector: 'app-category-dialog',
-  imports: [ReactiveFormsModule],
+  imports: [FontAwesomeModule, ReactiveFormsModule],
   templateUrl: './category-dialog.component.html',
   styleUrl: './category-dialog.component.scss',
 })
@@ -21,6 +23,9 @@ export class CategoryDialogComponent implements OnChanges {
   @Output() saveCategory = new EventEmitter<CategoryPayload>();
 
   advancedOpen = false;
+  readonly icons = {
+    close: faXmark,
+  };
 
   readonly form = this.fb.group({
     label: ['', [Validators.required, Validators.maxLength(255)]],

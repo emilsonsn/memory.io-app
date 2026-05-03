@@ -2,7 +2,7 @@
   <header class="topbar">
     <div class="search-shell">
       <label class="search-box" aria-label="Pesquisar memorias">
-        <span aria-hidden="true">⌕</span>
+        <fa-icon [icon]="icons.search" aria-hidden="true" />
         <input
           type="search"
           placeholder="Pesquisar"
@@ -83,7 +83,7 @@
       (click)="goToRoot()"
       title="Raiz"
     >
-      <span class="sidebar-icon" aria-hidden="true">R</span>
+      <span class="sidebar-icon" aria-hidden="true"><fa-icon [icon]="icons.folderOpen" /></span>
       <span class="sidebar-text">Raiz</span>
     </button>
 
@@ -112,7 +112,7 @@
         <strong class="sidebar-text">{{ authStore.user()?.name }}</strong>
       </div>
       <button class="sidebar-logout" type="button" (click)="logout()">
-        <span class="sidebar-icon" aria-hidden="true">S</span>
+        <span class="sidebar-icon" aria-hidden="true"><fa-icon [icon]="icons.logout" /></span>
         <span class="sidebar-text">Sair</span>
       </button>
     </div>
@@ -178,7 +178,7 @@
               [title]="copiedMemoryId() === memory.id ? 'Copiado' : 'Copiar conteudo'"
               (click)="copyMemoryContent(memory, $event)"
             >
-              <span aria-hidden="true"></span>
+              <fa-icon [icon]="icons.copy" aria-hidden="true" />
             </button>
             <p>{{ memory.content }}</p>
           </div>

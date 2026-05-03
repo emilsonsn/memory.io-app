@@ -1,11 +1,13 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faChevronDown, faCopy, faTimes, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { ToastrService } from 'ngx-toastr';
 import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../../models';
 
 @Component({
   selector: 'app-memory-dialog',
-  imports: [ReactiveFormsModule],
+  imports: [FontAwesomeModule, ReactiveFormsModule],
   templateUrl: './memory-dialog.component.html',
   styleUrl: './memory-dialog.component.scss',
 })
@@ -26,6 +28,12 @@ export class MemoryDialogComponent implements OnChanges {
   advancedOpen = false;
   categoriesOpen = false;
   contentCopied = false;
+  readonly icons = {
+    chevronDown: faChevronDown,
+    copy: faCopy,
+    remove: faTimes,
+    close: faXmark,
+  };
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],

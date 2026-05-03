@@ -8,9 +8,11 @@
         [title]="contentCopied ? 'Copiado' : 'Copiar conteudo'"
         (click)="copyContent()"
       >
-        <span aria-hidden="true">⧉</span>
+        <fa-icon [icon]="icons.copy" aria-hidden="true" />
       </button>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">×</button>
+      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">
+        <fa-icon [icon]="icons.close" aria-hidden="true" />
+      </button>
     </header>
 
     <div class="note-body">
@@ -60,7 +62,7 @@
             (click)="toggleCategories()"
           >
             <span>{{ categorySummary() }}</span>
-            <span class="select-chevron" aria-hidden="true">⌄</span>
+            <fa-icon class="select-chevron" [icon]="icons.chevronDown" aria-hidden="true" />
           </button>
 
           @if (categoriesOpen) {
@@ -83,7 +85,7 @@
               @for (category of selectedCategories(); track category.id) {
                 <button class="category-chip" type="button" (click)="toggleCategory(category.id)">
                   <span>{{ categoryDisplay(category) }}</span>
-                  <span aria-hidden="true">×</span>
+                  <fa-icon [icon]="icons.remove" aria-hidden="true" />
                 </button>
               }
             </div>

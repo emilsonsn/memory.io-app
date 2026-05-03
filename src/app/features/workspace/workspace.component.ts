@@ -4,6 +4,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import {
+  faArrowRightFromBracket,
+  faCopy,
+  faFolderOpen,
+  faSearch,
+} from '@fortawesome/free-solid-svg-icons';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
@@ -35,7 +42,7 @@ type MemoryFilterKey =
 
 @Component({
   selector: 'app-workspace',
-  imports: [CategoryDialogComponent, DatePipe, MemoryDialogComponent],
+  imports: [CategoryDialogComponent, DatePipe, FontAwesomeModule, MemoryDialogComponent],
   templateUrl: './workspace.component.html',
   styleUrl: './workspace.component.scss',
 })
@@ -59,6 +66,12 @@ export class WorkspaceComponent implements OnInit {
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly copiedMemoryId = signal<string | null>(null);
+  readonly icons = {
+    copy: faCopy,
+    folderOpen: faFolderOpen,
+    logout: faArrowRightFromBracket,
+    search: faSearch,
+  };
   readonly memoryFilters = signal<MemoryListFilters>({
     sortBy: 'created_at',
     sortDirection: 'desc',
