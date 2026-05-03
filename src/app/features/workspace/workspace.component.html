@@ -13,6 +13,38 @@
     </div>
   </header>
 
+  <aside class="sidebar" aria-label="Categorias">
+    <button
+      class="sidebar-root"
+      type="button"
+      [class.active]="!currentCategoryId()"
+      (click)="goToRoot()"
+      title="Raiz"
+    >
+      <span class="sidebar-icon" aria-hidden="true">R</span>
+      <span class="sidebar-text">Raiz</span>
+    </button>
+
+    <div class="sidebar-section">
+      <span class="sidebar-heading">Categoria</span>
+
+      <div class="sidebar-list">
+        @for (category of sidebarCategories(); track category.id) {
+          <button
+            class="sidebar-item"
+            type="button"
+            [class.active]="currentCategoryId() === category.id"
+            (click)="goToCategory(category)"
+            [title]="categoryDisplay(category)"
+          >
+            <span class="sidebar-color {{ category.color ?? 'gray' }}" aria-hidden="true"></span>
+            <span class="sidebar-text">{{ categoryDisplay(category) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  </aside>
+
   <section class="content-area">
     <header class="page-header">
       <div>

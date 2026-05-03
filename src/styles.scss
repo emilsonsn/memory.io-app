@@ -175,6 +175,136 @@ textarea:focus {
   color: var(--danger);
 }
 
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  width: var(--sidebar-collapsed);
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 10px 0 30px rgba(73, 43, 128, 0.08);
+  padding: 84px 10px 16px;
+  transition: width 0.2s ease;
+}
+
+.sidebar:hover,
+.sidebar:focus-within {
+  width: var(--sidebar-expanded);
+}
+
+.sidebar-heading {
+  display: block;
+  margin: 14px 0 4px;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.sidebar:hover .sidebar-heading,
+.sidebar:focus-within .sidebar-heading,
+.sidebar:hover .sidebar-text,
+.sidebar:focus-within .sidebar-text {
+  opacity: 1;
+}
+
+.sidebar-list {
+  display: grid;
+  gap: 4px;
+  max-height: calc(100vh - 166px);
+  overflow: auto;
+}
+
+.sidebar-root,
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.sidebar-root:hover,
+.sidebar-item:hover,
+.sidebar-root.active,
+.sidebar-item.active {
+  background: var(--surface-soft);
+}
+
+.sidebar-icon,
+.sidebar-color {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.sidebar-color {
+  border-radius: 50%;
+  background: #92909a;
+}
+
+.sidebar-text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    padding: 10px 18px;
+    box-shadow: none;
+  }
+
+  .sidebar:hover,
+  .sidebar:focus-within {
+    width: 100%;
+  }
+
+  .sidebar-heading,
+  .sidebar-text {
+    opacity: 1;
+  }
+
+  .sidebar-list {
+    display: flex;
+    overflow-x: auto;
+    max-height: none;
+  }
+
+  .sidebar-root,
+  .sidebar-item {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
 .compact {
   min-height: 36px;
   padding: 0 12px;

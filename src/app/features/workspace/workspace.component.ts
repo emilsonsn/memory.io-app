@@ -79,6 +79,10 @@ export class WorkspaceComponent implements OnInit {
     return this.memories();
   });
 
+  readonly sidebarCategories = computed(() => {
+    return [...this.categories()].sort((left, right) => this.categoryDisplay(left).localeCompare(this.categoryDisplay(right)));
+  });
+
   readonly currentDefaultMemoryColor = computed<NoteColor | null>(() => {
     return this.currentCategory()?.color ?? null;
   });
@@ -276,6 +280,10 @@ export class WorkspaceComponent implements OnInit {
 
   parentName(parentId: string): string {
     return this.findCategory(parentId)?.label ?? 'Categoria';
+  }
+
+  categoryDisplay(category: Category): string {
+    return category.parent_id ? `${this.parentName(category.parent_id)} / ${category.label}` : category.label;
   }
 
   private closeAfterSave(): void {
