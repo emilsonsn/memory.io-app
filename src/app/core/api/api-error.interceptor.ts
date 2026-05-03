@@ -1,14 +1,16 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, throwError } from 'rxjs';
+
+export const SKIP_API_ERROR_TOAST = new HttpContextToken<boolean>(() => false);
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const toastr = inject(ToastrService);
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse) {
+      if (error instanceof HttpErrorResponse && !request.context.get(SKIP_API_ERROR_TOAST)) {
         toastr.error(extractError(error), 'Erro');
       }
 
