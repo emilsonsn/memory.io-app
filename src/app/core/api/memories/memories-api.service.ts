@@ -6,6 +6,16 @@ import { ApiClientService } from '../api-client.service';
 export interface MemoryListFilters {
   categoryIds?: string[];
   withoutCategories?: boolean;
+  text?: string;
+  color?: string | null;
+  createdFrom?: string;
+  createdTo?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
+  dueFrom?: string;
+  dueTo?: string;
+  sortBy?: 'title' | 'color' | 'due_date' | 'created_at' | 'updated_at';
+  sortDirection?: 'asc' | 'desc';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +31,17 @@ export class MemoriesApiService {
       params['category_ids'] = filters.categoryIds.join(',');
     }
 
+    this.addParam(params, 'text', filters.text);
+    this.addParam(params, 'color', filters.color);
+    this.addParam(params, 'created_from', filters.createdFrom);
+    this.addParam(params, 'created_to', filters.createdTo);
+    this.addParam(params, 'updated_from', filters.updatedFrom);
+    this.addParam(params, 'updated_to', filters.updatedTo);
+    this.addParam(params, 'due_from', filters.dueFrom);
+    this.addParam(params, 'due_to', filters.dueTo);
+    this.addParam(params, 'sort_by', filters.sortBy);
+    this.addParam(params, 'sort_direction', filters.sortDirection);
+
     return this.api.get<Memory[]>('/memories', params);
   }
 
@@ -34,5 +55,11 @@ export class MemoriesApiService {
 
   delete(id: string): Observable<null> {
     return this.api.delete<null>(`/memories/${id}`);
+  }
+
+  private addParam(params: Record<string, string | number | boolean>, key: string, value?: string | null): void {
+    if (value) {
+      params[key] = value;
+    }
   }
 }

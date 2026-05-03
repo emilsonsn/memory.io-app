@@ -21,6 +21,17 @@ import {
 } from '../../shared/models';
 
 type DialogType = 'category' | 'memory' | null;
+type MemoryFilterKey =
+  | 'text'
+  | 'color'
+  | 'createdFrom'
+  | 'createdTo'
+  | 'updatedFrom'
+  | 'updatedTo'
+  | 'dueFrom'
+  | 'dueTo'
+  | 'sortBy'
+  | 'sortDirection';
 
 @Component({
   selector: 'app-workspace',
@@ -48,6 +59,12 @@ export class WorkspaceComponent implements OnInit {
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly copiedMemoryId = signal<string | null>(null);
+  readonly memoryFilters = signal<MemoryListFilters>({
+    sortBy: 'created_at',
+    sortDirection: 'desc',
+  });
+
+  private searchDebounce: number | null = null;
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -163,6 +180,45 @@ export class WorkspaceComponent implements OnInit {
     const current = this.currentCategory();
     this.currentCategoryId.set(current?.parent_id ?? null);
     this.loadMemories();
+  }
+
+  updateMemoryFilter(key: MemoryFilterKey, value: string): void {
+    this.memoryFilters.update((filters) => ({
+      ...filters,
+      [key]: value || undefined,
+    }));
+
+    if (key === 'text') {
+      this.scheduleLoadMemories();
+      return;
+    }
+
+    this.loadMemories();
+  }
+
+  clearMemoryFilters(): void {
+    this.memoryFilters.set({
+      sortBy: 'created_at',
+      sortDirection: 'desc',
+    });
+    this.loadMemories();
+  }
+
+  hasMemoryFilters(): boolean {
+    const filters = this.memoryFilters();
+
+    return Boolean(
+      filters.text
+      || filters.color
+      || filters.createdFrom
+      || filters.createdTo
+      || filters.updatedFrom
+      || filters.updatedTo
+      || filters.dueFrom
+      || filters.dueTo
+      || filters.sortBy !== 'created_at'
+      || filters.sortDirection !== 'desc',
+    );
   }
 
   saveCategory(payload: CategoryPayload): void {
@@ -297,6 +353,11 @@ export class WorkspaceComponent implements OnInit {
   }
 
   private loadMemories(): void {
+    if (this.searchDebounce) {
+      window.clearTimeout(this.searchDebounce);
+      this.searchDebounce = null;
+    }
+
     this.loading.set(true);
     this.error.set(null);
 
@@ -312,10 +373,24 @@ export class WorkspaceComponent implements OnInit {
 
   private currentMemoryFilters(): MemoryListFilters {
     const categoryId = this.currentCategoryId();
+    const filters = this.memoryFilters();
 
-    return categoryId
+    const scopeFilters = categoryId
       ? { categoryIds: [categoryId] }
       : { withoutCategories: true };
+
+    return {
+      ...filters,
+      ...scopeFilters,
+    };
+  }
+
+  private scheduleLoadMemories(): void {
+    if (this.searchDebounce) {
+      window.clearTimeout(this.searchDebounce);
+    }
+
+    this.searchDebounce = window.setTimeout(() => this.loadMemories(), 350);
   }
 
   private findCategory(categoryId: string): Category | null {

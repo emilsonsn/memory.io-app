@@ -330,6 +330,112 @@ textarea:focus {
   opacity: 0;
 }
 
+.search-shell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 980px);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  grid-template-columns: none;
+  gap: 12px;
+  flex: 1 1 360px;
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  padding: 0 14px;
+  font-weight: 500;
+}
+
+.search-box input {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.quick-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-filters label {
+  gap: 4px;
+  min-width: 112px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.quick-filters select,
+.quick-filters input {
+  min-height: 34px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.84rem;
+}
+
+.advanced-filter-menu {
+  position: relative;
+}
+
+.advanced-filter-menu summary,
+.clear-filter-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  padding: 0 12px;
+  font-size: 0.84rem;
+  font-weight: 720;
+  list-style: none;
+  cursor: pointer;
+}
+
+.advanced-filter-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 15;
+  display: grid;
+  gap: 12px;
+  width: 360px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.filter-popover fieldset {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.filter-popover legend {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 @media (max-width: 720px) {
   .sidebar {
     position: sticky;
@@ -360,6 +466,18 @@ textarea:focus {
   .sidebar-item {
     width: auto;
     flex: 0 0 auto;
+  }
+
+  .search-shell,
+  .quick-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-popover {
+    left: 0;
+    right: auto;
+    width: min(88vw, 360px);
   }
 }
 
