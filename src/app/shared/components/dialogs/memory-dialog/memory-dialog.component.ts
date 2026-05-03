@@ -23,6 +23,7 @@ export class MemoryDialogComponent implements OnChanges {
 
   advancedOpen = false;
   categoriesOpen = false;
+  contentCopied = false;
 
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],
@@ -36,6 +37,7 @@ export class MemoryDialogComponent implements OnChanges {
     if (changes['memory'] || changes['defaultCategoryId'] || changes['defaultColor']) {
       this.advancedOpen = false;
       this.categoriesOpen = false;
+      this.contentCopied = false;
 
       this.form.reset({
         title: this.memory?.title ?? '',
@@ -96,6 +98,22 @@ export class MemoryDialogComponent implements OnChanges {
     return category.parent_id ? `${this.parentName(category.parent_id)} / ${category.label}` : category.label;
   }
 
+  copyContent(): void {
+    const content = this.form.controls.content.value ?? '';
+
+    if (!content.trim()) {
+      return;
+    }
+
+    void this.copyToClipboard(content).then(() => {
+      this.contentCopied = true;
+
+      window.setTimeout(() => {
+        this.contentCopied = false;
+      }, 1200);
+    });
+  }
+
   submit(): void {
     if (this.form.invalid || this.saving) {
       return;
@@ -122,5 +140,21 @@ export class MemoryDialogComponent implements OnChanges {
     }
 
     return value.slice(0, 16);
+  }
+
+  private async copyToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
   }
 }

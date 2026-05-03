@@ -1,6 +1,15 @@
 <div class="dialog-backdrop" (click)="closeDialog.emit()">
   <form class="dialog-panel note-dialog" [formGroup]="form" (ngSubmit)="submit()" (click)="$event.stopPropagation()">
     <header class="note-header">
+      <button
+        class="copy-content-button"
+        type="button"
+        [attr.aria-label]="contentCopied ? 'Conteudo copiado' : 'Copiar conteudo'"
+        [title]="contentCopied ? 'Copiado' : 'Copiar conteudo'"
+        (click)="copyContent()"
+      >
+        <span aria-hidden="true">⧉</span>
+      </button>
       <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">×</button>
     </header>
 

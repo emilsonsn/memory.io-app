@@ -18,12 +18,15 @@
 
 .note-header {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 4px;
   min-height: 40px;
   padding: 8px 8px 0;
 }
 
-.note-header .icon-button {
+.note-header .icon-button,
+.copy-content-button {
   width: 34px;
   height: 34px;
   flex-basis: 34px;
@@ -66,14 +69,8 @@
   line-height: 1.6;
 }
 
-.note-title::placeholder,
-.note-content::placeholder {
-  color: #5f6368;
-}
-
-.note-title:focus,
-.note-content:focus {
-  box-shadow: none;
+.copy-content-button span {
+  font-size: 1rem;
 }
 
 .advanced-options {
@@ -106,13 +103,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   width: 100%;
   min-height: 44px;
   border: 1px solid #dadce0;
   border-radius: 8px;
   background: #fff;
-  color: #202124;
   padding: 0 12px;
 }
 
@@ -122,7 +117,6 @@
 }
 
 .select-chevron {
-  color: #5f6368;
   font-size: 1.2rem;
 }
 
@@ -155,10 +149,6 @@
   margin: 0;
 }
 
-.category-option span {
-  overflow-wrap: anywhere;
-}
-
 .selected-category-list {
   display: flex;
   flex-wrap: wrap;
@@ -168,12 +158,10 @@
 .category-chip {
   display: inline-flex;
   align-items: center;
-  max-width: 100%;
   min-height: 30px;
   border: 1px solid #dadce0;
   border-radius: 999px;
   background: #f8fafd;
-  color: #3c4043;
   padding: 0 10px;
   font-size: 0.82rem;
 }
@@ -186,7 +174,6 @@
 .dialog-actions {
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   padding: 8px 8px 8px 16px;
 }
 
@@ -197,10 +184,6 @@
   background: transparent;
   color: #5f6368;
   padding: 0 8px;
-}
-
-.advanced-toggle:hover {
-  background: #f1f3f4;
 }
 
 .action-group {
