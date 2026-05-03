@@ -286,6 +286,10 @@ export class WorkspaceComponent implements OnInit {
     return category.parent_id ? `${this.parentName(category.parent_id)} / ${category.label}` : category.label;
   }
 
+  userInitial(): string {
+    return this.authStore.user()?.name?.trim().charAt(0).toUpperCase() || 'U';
+  }
+
   private closeAfterSave(): void {
     this.activeDialog.set(null);
     this.editingCategory.set(null);

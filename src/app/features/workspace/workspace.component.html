@@ -1,19 +1,12 @@
 <main class="workspace">
   <header class="topbar">
-    <div>
-      <a class="brand">memory.io</a>
-      <p class="muted small">Biblioteca pessoal</p>
-    </div>
-
-    <div class="user-area">
-      <div class="user-box">
-        <strong>{{ authStore.user()?.name }}</strong>
-      </div>
-      <button class="ghost-button compact" type="button" (click)="logout()">Sair</button>
-    </div>
   </header>
 
   <aside class="sidebar" aria-label="Categorias">
+    <div class="sidebar-profile">
+      <a class="brand sidebar-brand">memory.io</a>
+    </div>
+
     <button
       class="sidebar-root"
       type="button"
@@ -42,6 +35,17 @@
           </button>
         }
       </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <span class="sidebar-avatar" aria-hidden="true">{{ userInitial() }}</span>
+        <strong class="sidebar-text">{{ authStore.user()?.name }}</strong>
+      </div>
+      <button class="sidebar-logout" type="button" (click)="logout()">
+        <span class="sidebar-icon" aria-hidden="true">S</span>
+        <span class="sidebar-text">Sair</span>
+      </button>
     </div>
   </aside>
 

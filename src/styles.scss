@@ -179,12 +179,14 @@ textarea:focus {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 20;
+  display: flex;
+  flex-direction: column;
   width: var(--sidebar-collapsed);
   overflow: hidden;
   border-right: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 10px 0 30px rgba(73, 43, 128, 0.08);
-  padding: 84px 10px 16px;
+  padding: 14px 10px 16px;
   transition: width 0.2s ease;
 }
 
@@ -208,14 +210,36 @@ textarea:focus {
 .sidebar:hover .sidebar-heading,
 .sidebar:focus-within .sidebar-heading,
 .sidebar:hover .sidebar-text,
-.sidebar:focus-within .sidebar-text {
+.sidebar:focus-within .sidebar-text,
+.sidebar:hover .sidebar-brand,
+.sidebar:focus-within .sidebar-brand {
   opacity: 1;
+}
+
+.sidebar-profile {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sidebar-section {
+  min-height: 0;
+}
+
+.sidebar-brand {
+  margin: 0 10px 6px;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.sidebar-brand::before {
+  flex: 0 0 14px;
 }
 
 .sidebar-list {
   display: grid;
   gap: 4px;
-  max-height: calc(100vh - 166px);
+  max-height: calc(100vh - 230px);
   overflow: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;  
@@ -225,9 +249,18 @@ textarea:focus {
   }
 }
 
+.sidebar-footer {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
 
 .sidebar-root,
-.sidebar-item {
+.sidebar-item,
+.sidebar-user,
+.sidebar-logout {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -242,19 +275,22 @@ textarea:focus {
 
 .sidebar-root:hover,
 .sidebar-item:hover,
+.sidebar-logout:hover,
 .sidebar-root.active,
 .sidebar-item.active {
   background: var(--surface-soft);
 }
 
 .sidebar-icon,
-.sidebar-color {
+.sidebar-color,
+.sidebar-avatar {
   flex: 0 0 18px;
   width: 18px;
   height: 18px;
 }
 
-.sidebar-icon {
+.sidebar-icon,
+.sidebar-avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -265,9 +301,23 @@ textarea:focus {
   font-weight: 800;
 }
 
+.sidebar-avatar {
+  border-radius: 50%;
+  background: #ded9e8;
+  color: var(--text);
+}
+
 .sidebar-color {
   border-radius: 50%;
   background: #92909a;
+}
+
+.sidebar-user {
+  background: var(--surface-soft);
+}
+
+.sidebar-logout {
+  color: var(--muted);
 }
 
 .sidebar-text {
@@ -295,7 +345,8 @@ textarea:focus {
   }
 
   .sidebar-heading,
-  .sidebar-text {
+  .sidebar-text,
+  .sidebar-brand {
     opacity: 1;
   }
 

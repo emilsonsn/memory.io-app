@@ -24,28 +24,6 @@
   backdrop-filter: blur(14px);
 }
 
-.user-area {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-box {
-  display: grid;
-  gap: 2px;
-  max-width: 260px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.user-box span {
-  color: var(--muted);
-  font-size: 0.82rem;
-  overflow-wrap: anywhere;
-}
-
 .content-area {
   min-width: 0;
   padding: 32px 32px 32px calc(var(--sidebar-collapsed) + 32px);
@@ -270,8 +248,7 @@
 
 @media (max-width: 720px) {
   .topbar,
-  .page-header,
-  .user-area {
+  .page-header {
     align-items: stretch;
     flex-direction: column;
   }
@@ -279,10 +256,6 @@
   .topbar,
   .content-area {
     padding: 18px;
-  }
-
-  .user-box {
-    max-width: none;
   }
 
   .header-actions {
