@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
-import { MemoriesApiService } from '../../core/api/memories/memories-api.service';
+import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { CategoryDialogComponent } from '../../shared/components/dialogs/category-dialog/category-dialog.component';
 import { MemoryDialogComponent } from '../../shared/components/dialogs/memory-dialog/memory-dialog.component';
@@ -72,13 +72,7 @@ export class WorkspaceComponent implements OnInit {
   });
 
   readonly visibleMemories = computed(() => {
-    const categoryId = this.currentCategoryId();
-
-    if (!categoryId) {
-      return this.memories().filter((memory) => memory.categories.length === 0);
-    }
-
-    return this.memories().filter((memory) => memory.categories.some((category) => category.id === categoryId));
+    return this.memories();
   });
 
   ngOnInit(): void {
@@ -92,14 +86,17 @@ export class WorkspaceComponent implements OnInit {
     forkJoin({
       colors: this.colorsApi.list(),
       categories: this.categoriesApi.list(),
-      memories: this.memoriesApi.list(),
+      memories: this.memoriesApi.list(this.currentMemoryFilters()),
     }).subscribe({
       next: ({ colors, categories, memories }) => {
         this.colors.set(colors);
         this.categories.set(categories);
         this.memories.set(memories);
       },
-      error: () => this.error.set('Nao foi possivel carregar os cadastros. Verifique se a API esta ativa.'),
+      error: () => {
+        this.error.set('Nao foi possivel carregar os cadastros. Verifique se a API esta ativa.');
+        this.loading.set(false);
+      },
       complete: () => this.loading.set(false),
     });
   }
@@ -137,19 +134,23 @@ export class WorkspaceComponent implements OnInit {
 
   enterCategory(category: Category): void {
     this.currentCategoryId.set(category.id);
+    this.loadMemories();
   }
 
   goToRoot(): void {
     this.currentCategoryId.set(null);
+    this.loadMemories();
   }
 
   goToCategory(category: Category): void {
     this.currentCategoryId.set(category.id);
+    this.loadMemories();
   }
 
   goUp(): void {
     const current = this.currentCategory();
     this.currentCategoryId.set(current?.parent_id ?? null);
+    this.loadMemories();
   }
 
   saveCategory(payload: CategoryPayload): void {
@@ -194,11 +195,9 @@ export class WorkspaceComponent implements OnInit {
       : this.memoriesApi.create(finalPayload);
 
     request.subscribe({
-      next: (memory) => {
-        this.memories.update((memories) => editing
-          ? memories.map((item) => item.id === memory.id ? memory : item)
-          : [memory, ...memories]);
+      next: () => {
         this.closeAfterSave();
+        this.loadMemories();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
       complete: () => this.saving.set(false),
@@ -219,6 +218,8 @@ export class WorkspaceComponent implements OnInit {
         if (this.currentCategoryId() === category.id) {
           this.currentCategoryId.set(category.parent_id);
         }
+
+        this.loadMemories();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
     });
@@ -251,6 +252,28 @@ export class WorkspaceComponent implements OnInit {
     this.activeDialog.set(null);
     this.editingCategory.set(null);
     this.editingMemory.set(null);
+  }
+
+  private loadMemories(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.memoriesApi.list(this.currentMemoryFilters()).subscribe({
+      next: (memories) => this.memories.set(memories),
+      error: () => {
+        this.error.set('Nao foi possivel carregar as memorias. Verifique se a API esta ativa.');
+        this.loading.set(false);
+      },
+      complete: () => this.loading.set(false),
+    });
+  }
+
+  private currentMemoryFilters(): MemoryListFilters {
+    const categoryId = this.currentCategoryId();
+
+    return categoryId
+      ? { categoryIds: [categoryId] }
+      : { withoutCategories: true };
   }
 
   private findCategory(categoryId: string): Category | null {
