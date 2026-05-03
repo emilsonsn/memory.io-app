@@ -1,1 +1,186 @@
 @use '../dialog';
+
+.dialog-backdrop {
+  background: rgba(32, 33, 36, 0.38);
+  backdrop-filter: none;
+}
+
+.dialog-panel.note-dialog {
+  width: min(100%, 600px);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-color: #dadce0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(32, 33, 36, 0.28);
+}
+
+.note-header {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 40px;
+  padding: 8px 8px 0;
+}
+
+.note-header .icon-button {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #5f6368;
+  font-size: 1.35rem;
+}
+
+.note-header .icon-button:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+.note-body {
+  display: grid;
+  gap: 2px;
+  padding: 0 16px 12px;
+}
+
+.note-title,
+.note-content {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #202124;
+  padding: 0;
+  overflow-wrap: anywhere;
+  transition: none;
+}
+
+.note-title {
+  height: auto;
+  margin-bottom: 20px;
+  font-size: 1.375rem;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+.note-content {
+  min-height: 300px;
+  max-height: min(48vh, 440px);
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.note-title::placeholder,
+.note-content::placeholder {
+  color: #5f6368;
+  opacity: 1;
+}
+
+.note-title:focus,
+.note-content:focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.advanced-options {
+  display: grid;
+  gap: 14px;
+  margin: 0 16px 8px;
+  padding: 14px 0 16px;
+  border-top: 1px solid #e8eaed;
+}
+
+.advanced-options label {
+  color: #3c4043;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.advanced-options input,
+.advanced-options select,
+.advanced-options textarea {
+  border-color: #dadce0;
+  background: #fff;
+  color: #202124;  
+}
+
+.dialog-actions {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-top: 1px solid transparent;
+}
+
+.advanced-toggle {
+  min-height: 36px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5f6368;
+  padding: 0 8px;
+  font-weight: 600;
+}
+
+.advanced-toggle:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialog-actions .ghost-button,
+.dialog-actions .primary-button {
+  min-height: 36px;
+  border-radius: 4px;
+  padding: 0 14px;
+}
+
+.dialog-actions .ghost-button {
+  border: 0;
+  background: transparent;
+  color: #3c4043;
+}
+
+.dialog-actions .ghost-button:hover {
+  background: #f1f3f4;
+}
+
+@media (max-width: 620px) {
+  .dialog-panel.note-dialog {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+
+  .note-content {
+    min-height: 180px;
+  }
+
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 8px 12px 12px;
+  }
+
+  .advanced-toggle,
+  .action-group {
+    width: 100%;
+  }
+
+  .action-group {
+    justify-content: stretch;
+  }
+
+  .action-group button {
+    flex: 1 1 0;
+  }
+}

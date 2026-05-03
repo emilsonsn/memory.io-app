@@ -20,6 +20,8 @@ export class MemoryDialogComponent implements OnChanges {
   @Output() closeDialog = new EventEmitter<void>();
   @Output() saveMemory = new EventEmitter<MemoryPayload>();
 
+  advancedOpen = false;
+
   readonly form = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],
     content: ['', [Validators.required]],
@@ -30,6 +32,8 @@ export class MemoryDialogComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['memory'] || changes['defaultCategoryId']) {
+      this.advancedOpen = false;
+
       this.form.reset({
         title: this.memory?.title ?? '',
         content: this.memory?.content ?? '',
@@ -40,6 +44,10 @@ export class MemoryDialogComponent implements OnChanges {
           : this.defaultCategoryId ? [this.defaultCategoryId] : [],
       });
     }
+  }
+
+  toggleAdvanced(): void {
+    this.advancedOpen = !this.advancedOpen;
   }
 
   categoryDisplay(category: Category): string {
