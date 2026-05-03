@@ -20,7 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
-import { CategoriesApiService } from '../../core/api/categories/categories-api.service';
+import { CategoriesApiService, CategoryListFilters } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
 import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
@@ -77,6 +77,7 @@ export class WorkspaceComponent implements OnInit {
   readonly currentCategoryId = signal<string | null>(null);
   readonly colors = signal<ColorOption[]>([]);
   readonly categories = signal<Category[]>([]);
+  readonly filteredCategories = signal<Category[]>([]);
   readonly memories = signal<Memory[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
@@ -114,6 +115,10 @@ export class WorkspaceComponent implements OnInit {
   });
 
   readonly visibleCategories = computed(() => {
+    if (this.hasMemoryFilters()) {
+      return [...this.filteredCategories()].sort((left, right) => left.label.localeCompare(right.label));
+    }
+
     const parentId = this.currentCategoryId();
 
     return this.categories()
@@ -440,10 +445,31 @@ export class WorkspaceComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.memoriesApi.list(this.currentMemoryFilters()).subscribe({
-      next: (memories) => this.memories.set(memories),
+    const memoryFilters = this.currentMemoryFilters();
+    const requests = this.hasMemoryFilters()
+      ? forkJoin({
+        memories: this.memoriesApi.list(memoryFilters),
+        categories: this.categoriesApi.list(this.currentCategoryFilters()),
+      })
+      : forkJoin({
+        memories: this.memoriesApi.list(memoryFilters),
+        categories: this.categoriesApi.list(),
+      });
+
+    requests.subscribe({
+      next: ({ memories, categories }) => {
+        this.memories.set(memories);
+
+        if (this.hasMemoryFilters()) {
+          this.filteredCategories.set(categories);
+          return;
+        }
+
+        this.categories.set(categories);
+        this.filteredCategories.set([]);
+      },
       error: () => {
-        this.error.set('Nao foi possivel carregar as memorias. Verifique se a API esta ativa.');
+        this.error.set('Nao foi possivel carregar os resultados. Verifique se a API esta ativa.');
         this.loading.set(false);
       },
       complete: () => this.loading.set(false),
@@ -465,6 +491,22 @@ export class WorkspaceComponent implements OnInit {
     return {
       ...filters,
       ...scopeFilters,
+    };
+  }
+
+  private currentCategoryFilters(): CategoryListFilters {
+    const filters = this.memoryFilters();
+    const sortBy = filters.sortBy === 'title'
+      ? 'label'
+      : filters.sortBy === 'color' || filters.sortBy === 'created_at' || filters.sortBy === 'updated_at'
+        ? filters.sortBy
+        : undefined;
+
+    return {
+      text: filters.text,
+      color: filters.color,
+      sortBy,
+      sortDirection: filters.sortDirection,
     };
   }
 
