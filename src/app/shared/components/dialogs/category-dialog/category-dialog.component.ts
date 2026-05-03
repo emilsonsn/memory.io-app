@@ -20,6 +20,8 @@ export class CategoryDialogComponent implements OnChanges {
   @Output() closeDialog = new EventEmitter<void>();
   @Output() saveCategory = new EventEmitter<CategoryPayload>();
 
+  advancedOpen = false;
+
   readonly form = this.fb.group({
     label: ['', [Validators.required, Validators.maxLength(255)]],
     description: ['', [Validators.required, Validators.maxLength(255)]],
@@ -29,6 +31,8 @@ export class CategoryDialogComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['category'] || changes['defaultParentId']) {
+      this.advancedOpen = false;
+
       this.form.reset({
         label: this.category?.label ?? '',
         description: this.category?.description ?? '',
@@ -36,6 +40,10 @@ export class CategoryDialogComponent implements OnChanges {
         parent_id: this.category?.parent_id ?? this.defaultParentId,
       });
     }
+  }
+
+  toggleAdvanced(): void {
+    this.advancedOpen = !this.advancedOpen;
   }
 
   parentOptions(): Category[] {

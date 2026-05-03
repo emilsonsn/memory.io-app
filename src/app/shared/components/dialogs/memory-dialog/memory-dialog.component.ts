@@ -90,10 +90,10 @@ export class MemoryDialogComponent implements OnChanges {
     const total = this.selectedCategories().length;
 
     if (total === 0) {
-      return 'Nenhuma pasta selecionada';
+      return 'Nenhuma categoria selecionada';
     }
 
-    return total === 1 ? '1 pasta selecionada' : `${total} pastas selecionadas`;
+    return total === 1 ? '1 categoria selecionada' : `${total} categorias selecionadas`;
   }
 
   categoryDisplay(category: Category): string {

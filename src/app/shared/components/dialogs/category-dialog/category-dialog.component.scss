@@ -1,1 +1,53 @@
 @use '../dialog';
+
+.advanced-options {
+  padding-top: 4px;
+}
+
+.dialog-actions {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.advanced-toggle {
+  min-height: 36px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5f6368;
+  padding: 0 8px;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialog-actions .ghost-button,
+.dialog-actions .primary-button {
+  min-height: 36px;
+  border-radius: 4px;
+  padding: 0 14px;
+}
+
+.dialog-actions .ghost-button {
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 620px) {
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action-group {
+    justify-content: stretch;
+  }
+
+  .action-group button {
+    flex: 1 1 0;
+  }
+}

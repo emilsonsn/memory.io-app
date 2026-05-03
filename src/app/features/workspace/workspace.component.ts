@@ -178,7 +178,7 @@ export class WorkspaceComponent implements OnInit {
         this.categories.update((categories) => editing
           ? categories.map((item) => item.id === category.id ? category : item)
           : [category, ...categories]);
-        this.toastr.success(editing ? 'Pasta atualizada com sucesso.' : 'Pasta criada com sucesso.');
+        this.toastr.success(editing ? 'Categoria atualizada com sucesso.' : 'Categoria criada com sucesso.');
         this.closeAfterSave();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
@@ -217,7 +217,7 @@ export class WorkspaceComponent implements OnInit {
   removeCategory(category: Category, event: Event): void {
     event.stopPropagation();
 
-    if (!confirm(`Excluir a pasta "${category.label}"?`)) {
+    if (!confirm(`Excluir a categoria "${category.label}"?`)) {
       return;
     }
 
@@ -229,7 +229,7 @@ export class WorkspaceComponent implements OnInit {
           this.currentCategoryId.set(category.parent_id);
         }
 
-        this.toastr.success('Pasta excluida com sucesso.');
+        this.toastr.success('Categoria excluida com sucesso.');
         this.loadMemories();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
@@ -275,7 +275,7 @@ export class WorkspaceComponent implements OnInit {
   }
 
   parentName(parentId: string): string {
-    return this.findCategory(parentId)?.label ?? 'Pasta';
+    return this.findCategory(parentId)?.label ?? 'Categoria';
   }
 
   private closeAfterSave(): void {

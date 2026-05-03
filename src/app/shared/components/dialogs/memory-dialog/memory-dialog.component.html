@@ -51,7 +51,7 @@
         </div>
 
         <div class="category-field">
-          <span class="field-label">Pastas</span>
+          <span class="field-label">Categorias</span>
 
           <button
             class="category-select-trigger"
@@ -79,7 +79,7 @@
           }
 
           @if (selectedCategories().length > 0) {
-            <div class="selected-category-list" aria-label="Pastas selecionadas">
+            <div class="selected-category-list" aria-label="Categorias selecionadas">
               @for (category of selectedCategories(); track category.id) {
                 <button class="category-chip" type="button" (click)="toggleCategory(category.id)">
                   <span>{{ categoryDisplay(category) }}</span>

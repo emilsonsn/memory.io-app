@@ -25,14 +25,14 @@
         </nav>
 
         <h1>{{ currentCategory()?.label ?? 'Raiz' }}</h1>
-        <p class="muted">{{ currentCategory()?.description ?? 'Pastas e memorias sem pasta.' }}</p>
+        <p class="muted">{{ currentCategory()?.description ?? 'Categorias e memorias sem categoria.' }}</p>
       </div>
 
       <div class="header-actions">
         @if (currentCategory()) {
           <button class="ghost-button compact" type="button" (click)="goUp()">Voltar</button>
         }
-        <button class="ghost-button compact" type="button" (click)="openCreateCategory()">Nova pasta</button>
+        <button class="ghost-button compact" type="button" (click)="openCreateCategory()">Nova categoria</button>
         <button class="primary-button compact" type="button" (click)="openCreateMemory()">Nova memoria</button>
       </div>
     </header>
@@ -96,9 +96,9 @@
     @if (!loading() && visibleCategories().length === 0 && visibleMemories().length === 0) {
       <section class="empty-state">
         <h2>Nada por aqui ainda</h2>
-        <p class="muted">Crie uma pasta ou uma memoria para comecar este espaco.</p>
+        <p class="muted">Crie uma categoria ou uma memoria para comecar este espaco.</p>
         <div class="header-actions">
-          <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar pasta</button>
+          <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
           <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
         </div>
       </section>

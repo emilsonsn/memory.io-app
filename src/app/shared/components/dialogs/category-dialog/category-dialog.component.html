@@ -2,8 +2,8 @@
   <form class="dialog-panel" [formGroup]="form" (ngSubmit)="submit()" (click)="$event.stopPropagation()">
     <header class="dialog-header">
       <div>
-        <h2>{{ category ? 'Editar pasta' : 'Nova pasta' }}</h2>
-        <p class="muted">{{ category ? 'Atualize a categoria desta biblioteca.' : 'Crie uma pasta para organizar suas memorias.' }}</p>
+        <h2>{{ category ? 'Editar categoria' : 'Nova categoria' }}</h2>
+        <p class="muted">{{ category ? 'Atualize a categoria desta biblioteca.' : 'Crie uma categoria para organizar suas memorias.' }}</p>
       </div>
       <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">×</button>
     </header>
@@ -16,37 +16,52 @@
 
       <label>
         Descricao
-        <textarea rows="3" formControlName="description" placeholder="Contexto dessa pasta"></textarea>
+        <textarea rows="3" formControlName="description" placeholder="Contexto dessa categoria"></textarea>
       </label>
 
-      <div class="form-grid">
-        <label>
-          Cor
-          <select formControlName="color">
-            <option [ngValue]="null">Padrao</option>
-            @for (color of colors; track color.value) {
-              <option [ngValue]="color.value">{{ color.label }}</option>
-            }
-          </select>
-        </label>
+      @if (advancedOpen) {
+        <section class="advanced-options" aria-label="Opcoes avancadas">
+          <div class="form-grid">
+            <label>
+              Cor
+              <select formControlName="color">
+                <option [ngValue]="null">Padrao</option>
+                @for (color of colors; track color.value) {
+                  <option [ngValue]="color.value">{{ color.label }}</option>
+                }
+              </select>
+            </label>
 
-        <label>
-          Pasta pai
-          <select formControlName="parent_id">
-            <option [ngValue]="null">Raiz</option>
-            @for (option of parentOptions(); track option.id) {
-              <option [ngValue]="option.id">{{ categoryDisplay(option) }}</option>
-            }
-          </select>
-        </label>
-      </div>
+            <label>
+              Categoria pai
+              <select formControlName="parent_id">
+                <option [ngValue]="null">Raiz</option>
+                @for (option of parentOptions(); track option.id) {
+                  <option [ngValue]="option.id">{{ categoryDisplay(option) }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </section>
+      }
     </div>
 
     <div class="dialog-actions">
-      <button class="ghost-button" type="button" (click)="closeDialog.emit()">Cancelar</button>
-      <button class="primary-button" type="submit" [disabled]="form.invalid || saving">
-        {{ saving ? 'Salvando...' : 'Salvar pasta' }}
+      <button
+        class="advanced-toggle"
+        type="button"
+        [attr.aria-expanded]="advancedOpen"
+        (click)="toggleAdvanced()"
+      >
+        {{ advancedOpen ? 'Ocultar opcoes avancadas' : 'Opcoes avancadas' }}
       </button>
+
+      <div class="action-group">
+        <button class="ghost-button" type="button" (click)="closeDialog.emit()">Cancelar</button>
+        <button class="primary-button" type="submit" [disabled]="form.invalid || saving">
+          {{ saving ? 'Salvando...' : 'Salvar categoria' }}
+        </button>
+      </div>
     </div>
   </form>
 </div>
