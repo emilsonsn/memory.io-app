@@ -1,0 +1,56 @@
+<div class="dialog-backdrop" (click)="closeDialog.emit()">
+  <form class="dialog-panel note-dialog" [formGroup]="form" (ngSubmit)="submit()" (click)="$event.stopPropagation()">
+    <header class="dialog-header">
+      <div>
+        <h2>{{ memory ? 'Editar memoria' : 'Nova memoria' }}</h2>
+        <p class="muted">{{ memory ? 'Atualize esta nota.' : 'Capture uma nota rapida no estilo Keep.' }}</p>
+      </div>
+      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">×</button>
+    </header>
+
+    <div class="form-stack">
+      <label>
+        Titulo
+        <input type="text" formControlName="title" placeholder="O que voce quer lembrar?">
+      </label>
+
+      <label>
+        Conteudo
+        <textarea rows="8" formControlName="content" placeholder="Escreva a memoria aqui"></textarea>
+      </label>
+
+      <div class="form-grid">
+        <label>
+          Cor
+          <select formControlName="color">
+            <option [ngValue]="null">Padrao</option>
+            @for (color of colors; track color.value) {
+              <option [ngValue]="color.value">{{ color.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Due date
+          <input type="datetime-local" formControlName="due_date">
+        </label>
+      </div>
+
+      <label>
+        Pastas
+        <select formControlName="category_ids" multiple>
+          @for (category of categories; track category.id) {
+            <option [ngValue]="category.id">{{ categoryDisplay(category) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="dialog-actions">
+      <button class="ghost-button" type="button" (click)="closeDialog.emit()">Cancelar</button>
+      <button class="primary-button" type="submit" [disabled]="form.invalid || saving">
+        {{ saving ? 'Salvando...' : 'Salvar memoria' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,120 @@
+<main class="workspace">
+  <header class="topbar">
+    <div>
+      <a class="brand">memory.io</a>
+      <p class="muted small">Biblioteca pessoal</p>
+    </div>
+
+    <div class="user-area">
+      <div class="user-box">
+        <strong>{{ authStore.user()?.name }}</strong>
+      </div>
+      <button class="ghost-button compact" type="button" (click)="logout()">Sair</button>
+    </div>
+  </header>
+
+  <section class="content-area">
+    <header class="page-header">
+      <div>
+        <nav class="breadcrumbs" aria-label="Caminho atual">
+          <button type="button" (click)="goToRoot()">Raiz</button>
+          @for (category of breadcrumb(); track category.id) {
+            <span>/</span>
+            <button type="button" (click)="goToCategory(category)">{{ category.label }}</button>
+          }
+        </nav>
+
+        <h1>{{ currentCategory()?.label ?? 'Todas as memorias' }}</h1>
+        <p class="muted">{{ currentCategory()?.description ?? 'Pastas e notas no mesmo ambiente.' }}</p>
+      </div>
+
+      <div class="header-actions">
+        @if (currentCategory()) {
+          <button class="ghost-button compact" type="button" (click)="goUp()">Voltar</button>
+        }
+        <button class="ghost-button compact" type="button" (click)="openCreateCategory()">Nova pasta</button>
+        <button class="primary-button compact" type="button" (click)="openCreateMemory()">Nova memoria</button>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <p class="state-message">Carregando dados...</p>
+    } @else if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+
+    <section class="library-grid">
+      @for (category of visibleCategories(); track category.id) {
+        <article class="folder-card" role="button" tabindex="0" (click)="enterCategory(category)" (keyup.enter)="enterCategory(category)">
+          <div class="folder-icon {{ category.color ?? 'gray' }}"></div>
+          <div>
+            <h2>{{ category.label }}</h2>
+            <p>{{ category.description }}</p>
+            @if (category.parent_id) {
+              <span class="tag">Dentro de {{ parentName(category.parent_id) }}</span>
+            }
+          </div>
+          <div class="card-actions">
+            <button type="button" class="ghost-button compact" (click)="openEditCategory(category, $event)">Editar</button>
+            <button type="button" class="danger-button compact" (click)="removeCategory(category, $event)">Excluir</button>
+          </div>
+        </article>
+      }
+
+      @for (memory of visibleMemories(); track memory.id) {
+        <article class="memory-card" role="button" tabindex="0" (click)="openEditMemory(memory)" (keyup.enter)="openEditMemory(memory)">
+          <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
+          <h2>{{ memory.title }}</h2>
+          <p>{{ memory.content }}</p>
+          <div class="tag-row">
+            @for (category of memory.categories; track category.id) {
+              <span class="tag">{{ category.label }}</span>
+            }
+            @if (memory.due_date) {
+              <span class="tag">{{ memory.due_date | date:'dd/MM/yyyy HH:mm' }}</span>
+            }
+          </div>
+          <div class="card-actions">
+            <button type="button" class="ghost-button compact" (click)="openEditMemory(memory); $event.stopPropagation()">Editar</button>
+            <button type="button" class="danger-button compact" (click)="removeMemory(memory, $event)">Excluir</button>
+          </div>
+        </article>
+      }
+    </section>
+
+    @if (!loading() && visibleCategories().length === 0 && visibleMemories().length === 0) {
+      <section class="empty-state">
+        <h2>Nada por aqui ainda</h2>
+        <p class="muted">Crie uma pasta ou uma memoria para comecar este espaco.</p>
+        <div class="header-actions">
+          <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar pasta</button>
+          <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
+        </div>
+      </section>
+    }
+  </section>
+
+  @if (activeDialog() === 'category') {
+    <app-category-dialog
+      [categories]="categories()"
+      [colors]="colors()"
+      [category]="editingCategory()"
+      [defaultParentId]="editingCategory()?.parent_id ?? currentCategoryId()"
+      [saving]="saving()"
+      (closeDialog)="closeDialog()"
+      (saveCategory)="saveCategory($event)"
+    />
+  }
+
+  @if (activeDialog() === 'memory') {
+    <app-memory-dialog
+      [categories]="categories()"
+      [colors]="colors()"
+      [memory]="editingMemory()"
+      [defaultCategoryId]="currentCategoryId()"
+      [saving]="saving()"
+      (closeDialog)="closeDialog()"
+      (saveMemory)="saveMemory($event)"
+    />
+  }
+</main>
