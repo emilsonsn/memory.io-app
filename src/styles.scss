@@ -512,6 +512,22 @@ textarea:not(.mat-mdc-input-element):focus {
   color: #d8b22d;
 }
 
+.favorite-button.loading,
+.favorite-button:disabled {
+  cursor: wait;
+  opacity: 0.82;
+}
+
+.favorite-button.loading fa-icon {
+  animation: favorite-spin 0.75s linear infinite;
+}
+
+@keyframes favorite-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .card-settings-button:hover,
 .card-settings-button.active {
   border-color: var(--line);

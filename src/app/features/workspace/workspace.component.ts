@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { Observable, catchError, finalize, forkJoin, of } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -19,6 +19,7 @@ import {
   faNoteSticky,
   faSliders,
   faPlus,
+  faSpinner,
   faStar,
   faUser,
   faSearch,
@@ -37,8 +38,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService, CategoryListFilters } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
+import { FavoritesApiService } from '../../core/api/favorites';
 import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
-import { SetsApiService } from '../../core/api/sets';
 import { AuthStore } from '../../core/auth/auth.store';
 import { AppLoadingService } from '../../core/loading/app-loading.service';
 import { CategoryDialogComponent } from '../../shared/components/dialogs/category-dialog/category-dialog.component';
@@ -50,9 +51,11 @@ import {
   Category,
   CategoryPayload,
   ColorOption,
+  Favorite,
+  FavoritePayload,
+  FavoriteType,
   Memory,
   MemoryPayload,
-  MemorySet,
   NoteColor,
 } from '../../shared/models';
 
@@ -74,8 +77,8 @@ type MemoryFilterKey =
 type ReorderItem = Category | Memory;
 type DropIntent = 'before' | 'after' | 'inside';
 type FavoriteItem =
-  | { type: 'category'; item: Category }
-  | { type: 'memory'; item: Memory };
+  | { type: 'category'; item: Category; favorite: Favorite }
+  | { type: 'memory'; item: Memory; favorite: Favorite };
 
 @Component({
   selector: 'app-workspace',
@@ -103,8 +106,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private readonly authApi = inject(AuthApiService);
   private readonly categoriesApi = inject(CategoriesApiService);
   private readonly colorsApi = inject(ColorsApiService);
+  private readonly favoritesApi = inject(FavoritesApiService);
   private readonly memoriesApi = inject(MemoriesApiService);
-  private readonly setsApi = inject(SetsApiService);
   readonly authStore = inject(AuthStore);
   private readonly appLoading = inject(AppLoadingService);
   private readonly router = inject(Router);
@@ -121,8 +124,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly filteredCategories = signal<Category[]>([]);
   readonly memories = signal<Memory[]>([]);
   readonly allMemories = signal<Memory[]>([]);
-  readonly favoriteSets = signal<MemorySet[]>([]);
-  readonly favoriteKeys = signal<string[]>(this.readFavoriteKeys());
+  readonly favorites = signal<Favorite[]>([]);
+  readonly favoriteRequestKeys = signal<string[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly expandedMemory = signal<Memory | null>(null);
@@ -150,6 +153,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     profile: faUser,
     search: faSearch,
     sliders: faSliders,
+    spinner: faSpinner,
     star: faStar,
     thumbtack: faThumbtack,
     trash: faTrashCan,
@@ -206,26 +210,20 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return this.applyStoredOrder(this.memories(), this.memoryOrderKey());
   });
 
-  readonly recentMemories = computed(() => {
-    return [...this.visibleMemories()]
-      .sort((left, right) => new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime())
-      .slice(0, 3);
-  });
-
   readonly hasRootSections = computed(() => {
     return !this.currentCategoryId() && !this.hasMemoryFilters();
   });
 
   readonly favoriteItems = computed<FavoriteItem[]>(() => {
-    const favoriteKeys = new Set(this.favoriteKeys());
-    const categoryItems = this.categories()
-      .filter((category) => favoriteKeys.has(this.favoriteKey('category', category.id)))
-      .map((category): FavoriteItem => ({ type: 'category', item: category }));
-    const memoryItems = this.allMemories()
-      .filter((memory) => favoriteKeys.has(this.favoriteKey('memory', memory.id)))
-      .map((memory): FavoriteItem => ({ type: 'memory', item: memory }));
+    return this.favorites().flatMap((favorite): FavoriteItem[] => {
+      if (favorite.type === 'category') {
+        const category = favorite.category ?? this.categories().find((item) => item.id === favorite.category_id);
+        return category ? [{ type: 'category', item: category, favorite }] : [];
+      }
 
-    return [...categoryItems, ...memoryItems];
+      const memory = favorite.memory ?? this.allMemories().find((item) => item.id === favorite.memory_id);
+      return memory ? [{ type: 'memory', item: memory, favorite }] : [];
+    });
   });
 
   readonly showRootDashboard = computed(() => !this.currentCategoryId() && !this.hasMemoryFilters());
@@ -296,19 +294,19 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       categories: this.categoriesApi.list(),
       memories: this.memoriesApi.list(this.currentMemoryFilters()),
       allMemories: this.memoriesApi.list(),
-      favoriteSets: this.setsApi.list().pipe(catchError(() => of([]))),
+      favorites: this.favoritesApi.list().pipe(catchError(() => of([]))),
     }).pipe(
       finalize(() => {
         this.loading.set(false);
         this.appLoading.stop();
       }),
     ).subscribe({
-      next: ({ colors, categories, memories, allMemories, favoriteSets }) => {
+      next: ({ colors, categories, memories, allMemories, favorites }) => {
         this.colors.set(colors);
         this.categories.set(categories);
         this.memories.set(memories);
         this.allMemories.set(allMemories);
-        this.favoriteSets.set(favoriteSets);
+        this.favorites.set(favorites);
       },
       error: () => {
         this.error.set('Nao foi possivel carregar os cadastros. Verifique se a API esta ativa.');
@@ -849,21 +847,43 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
   }
 
-  isFavorite(type: FavoriteItem['type'], id: string): boolean {
-    return this.favoriteKeys().includes(this.favoriteKey(type, id));
+  isFavorite(type: FavoriteType, id: string): boolean {
+    return this.favorites().some((favorite) => this.favoriteKeyFromFavorite(favorite) === this.favoriteKey(type, id));
   }
 
-  toggleFavorite(type: FavoriteItem['type'], id: string, event: Event): void {
+  isFavoriteLoading(type: FavoriteType, id: string): boolean {
+    return this.favoriteRequestKeys().includes(this.favoriteKey(type, id));
+  }
+
+  toggleFavorite(type: FavoriteType, id: string, event: Event): void {
     event.stopPropagation();
     const key = this.favoriteKey(type, id);
 
-    this.favoriteKeys.update((keys) => {
-      const nextKeys = keys.includes(key)
-        ? keys.filter((item) => item !== key)
-        : [...keys, key];
+    if (this.favoriteRequestKeys().includes(key)) {
+      return;
+    }
 
-      localStorage.setItem('memory.io.favorites', JSON.stringify(nextKeys));
-      return nextKeys;
+    this.favoriteRequestKeys.update((keys) => [...keys, key]);
+
+    const favorite = this.favorites().find((item) => this.favoriteKeyFromFavorite(item) === key);
+    const request: Observable<Favorite | null> = favorite
+      ? this.favoritesApi.remove(this.favoritePayload(type, id))
+      : this.favoritesApi.add(this.favoritePayload(type, id));
+
+    request.pipe(
+      finalize(() => this.favoriteRequestKeys.update((keys) => keys.filter((item) => item !== key))),
+    ).subscribe({
+      next: (response) => {
+        if (favorite) {
+          this.favorites.update((items) => items.filter((item) => this.favoriteKeyFromFavorite(item) !== key));
+          return;
+        }
+
+        this.favorites.update((items) => [...items.filter((item) => this.favoriteKeyFromFavorite(item) !== key), response as Favorite]);
+      },
+      error: () => {
+        this.toastr.error('Nao foi possivel atualizar o favorito.');
+      },
     });
   }
 
@@ -874,24 +894,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     }
 
     this.openEditMemory(favorite.item);
-  }
-
-  setTitle(set: MemorySet): string {
-    return set.title || set.name || 'Favorito sem titulo';
-  }
-
-  setDescription(set: MemorySet): string {
-    if (set.description) {
-      return set.description;
-    }
-
-    const totalCards = set.cards?.length ?? 0;
-
-    if (totalCards === 0) {
-      return 'Sem memorias favoritas ainda.';
-    }
-
-    return totalCards === 1 ? '1 memoria favorita' : `${totalCards} memorias favoritas`;
   }
 
   logout(): void {
@@ -1238,23 +1240,19 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return `memory.io.memory-order.${this.currentCategoryId() ?? 'root'}`;
   }
 
-  private favoriteKey(type: FavoriteItem['type'], id: string): string {
+  private favoriteKey(type: FavoriteType, id: string): string {
     return `${type}:${id}`;
   }
 
-  private readFavoriteKeys(): string[] {
-    const raw = localStorage.getItem('memory.io.favorites');
+  private favoriteKeyFromFavorite(favorite: Favorite): string {
+    const id = favorite.type === 'category' ? favorite.category_id : favorite.memory_id;
+    return id ? this.favoriteKey(favorite.type, id) : favorite.id;
+  }
 
-    if (!raw) {
-      return [];
-    }
-
-    try {
-      const value = JSON.parse(raw);
-      return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-    } catch {
-      return [];
-    }
+  private favoritePayload(type: FavoriteType, id: string): FavoritePayload {
+    return type === 'category'
+      ? { category_id: id }
+      : { memory_id: id };
   }
 
   private scheduleLoadMemories(): void {
