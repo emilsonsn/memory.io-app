@@ -1,25 +1,31 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faArrowRightFromBracket,
   faBell,
+  faBoxArchive,
   faClock,
   faCopy,
+  faEllipsisVertical,
   faFolderOpen,
   faLayerGroup,
   faNoteSticky,
   faSliders,
   faPlus,
+  faStar,
   faUser,
   faSearch,
   faGear,
   faThumbtack,
   faTrashCan,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -32,7 +38,9 @@ import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { CategoriesApiService, CategoryListFilters } from '../../core/api/categories/categories-api.service';
 import { ColorsApiService } from '../../core/api/colors/colors-api.service';
 import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
+import { SetsApiService } from '../../core/api/sets';
 import { AuthStore } from '../../core/auth/auth.store';
+import { AppLoadingService } from '../../core/loading/app-loading.service';
 import { CategoryDialogComponent } from '../../shared/components/dialogs/category-dialog/category-dialog.component';
 import { AdvancedMemoryFiltersDialogComponent } from '../../shared/components/dialogs/advanced-memory-filters-dialog/advanced-memory-filters-dialog.component';
 import { ConfirmDialogComponent } from '../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
@@ -44,6 +52,7 @@ import {
   ColorOption,
   Memory,
   MemoryPayload,
+  MemorySet,
   NoteColor,
 } from '../../shared/models';
 
@@ -54,11 +63,19 @@ type DeleteTarget =
 type ConfirmTarget =
   | { type: 'move-to-category'; memory: Memory; category: Category }
   | { type: 'group-memories'; source: Memory; target: Memory };
+type QuickSettingsTarget =
+  | { type: 'category'; id: string }
+  | { type: 'memory'; id: string };
 type MemoryFilterKey =
   | 'text'
   | 'color'
   | 'createdFrom'
   | 'createdTo';
+type ReorderItem = Category | Memory;
+type DropIntent = 'before' | 'after' | 'inside';
+type FavoriteItem =
+  | { type: 'category'; item: Category }
+  | { type: 'memory'; item: Memory };
 
 @Component({
   selector: 'app-workspace',
@@ -75,16 +92,21 @@ type MemoryFilterKey =
     MatSelectModule,
     MemoryDialogComponent,
     NoteGroupDialogComponent,
+    QuillModule,
+    ReactiveFormsModule,
   ],
   templateUrl: './workspace.component.html',
   styleUrl: './workspace.component.scss',
 })
-export class WorkspaceComponent implements OnInit {
+export class WorkspaceComponent implements OnInit, OnDestroy {
+  private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
   private readonly categoriesApi = inject(CategoriesApiService);
   private readonly colorsApi = inject(ColorsApiService);
   private readonly memoriesApi = inject(MemoriesApiService);
+  private readonly setsApi = inject(SetsApiService);
   readonly authStore = inject(AuthStore);
+  private readonly appLoading = inject(AppLoadingService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
@@ -99,35 +121,51 @@ export class WorkspaceComponent implements OnInit {
   readonly filteredCategories = signal<Category[]>([]);
   readonly memories = signal<Memory[]>([]);
   readonly allMemories = signal<Memory[]>([]);
+  readonly favoriteSets = signal<MemorySet[]>([]);
+  readonly favoriteKeys = signal<string[]>(this.readFavoriteKeys());
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
+  readonly expandedMemory = signal<Memory | null>(null);
   readonly copiedMemoryId = signal<string | null>(null);
   readonly deleteTarget = signal<DeleteTarget | null>(null);
   readonly confirmTarget = signal<ConfirmTarget | null>(null);
+  readonly quickSettingsTarget = signal<QuickSettingsTarget | null>(null);
   readonly groupingPair = signal<{ source: Memory; target: Memory } | null>(null);
   readonly draggedMemory = signal<Memory | null>(null);
+  readonly draggedCategory = signal<Category | null>(null);
   readonly dropCategoryId = signal<string | null>(null);
   readonly dropMemoryId = signal<string | null>(null);
+  readonly dropMemoryIntent = signal<DropIntent>('inside');
   readonly sidebarPinned = signal(true);
   readonly icons = {
+    box: faBoxArchive,
     copy: faCopy,
+    ellipsis: faEllipsisVertical,
     folderOpen: faFolderOpen,
     gear: faGear,
     logout: faArrowRightFromBracket,
     notification: faBell,
+    note: faNoteSticky,
     plus: faPlus,
     profile: faUser,
     search: faSearch,
     sliders: faSliders,
+    star: faStar,
     thumbtack: faThumbtack,
     trash: faTrashCan,
+    close: faXmark,
   };
+  readonly expandedNoteForm = this.fb.group({
+    title: ['', [Validators.required, Validators.maxLength(255)]],
+    content: ['', [Validators.required]],
+  });
   readonly memoryFilters = signal<MemoryListFilters>({
     sortBy: 'created_at',
     sortDirection: 'desc',
   });
 
   private searchDebounce: number | null = null;
+  private expandedLastSavedSnapshot = '';
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -149,18 +187,45 @@ export class WorkspaceComponent implements OnInit {
 
   readonly visibleCategories = computed(() => {
     if (this.hasMemoryFilters()) {
-      return [...this.filteredCategories()].sort((left, right) => left.label.localeCompare(right.label));
+      return this.applyStoredOrder(
+        [...this.filteredCategories()].sort((left, right) => left.label.localeCompare(right.label)),
+        this.categoryOrderKey('filtered'),
+      );
     }
 
     const parentId = this.currentCategoryId();
 
-    return this.categories()
+    const categories = this.categories()
       .filter((category) => category.parent_id === parentId)
       .sort((left, right) => left.label.localeCompare(right.label));
+
+    return this.applyStoredOrder(categories, this.categoryOrderKey(parentId));
   });
 
   readonly visibleMemories = computed(() => {
-    return this.memories();
+    return this.applyStoredOrder(this.memories(), this.memoryOrderKey());
+  });
+
+  readonly recentMemories = computed(() => {
+    return [...this.visibleMemories()]
+      .sort((left, right) => new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime())
+      .slice(0, 3);
+  });
+
+  readonly hasRootSections = computed(() => {
+    return !this.currentCategoryId() && !this.hasMemoryFilters();
+  });
+
+  readonly favoriteItems = computed<FavoriteItem[]>(() => {
+    const favoriteKeys = new Set(this.favoriteKeys());
+    const categoryItems = this.categories()
+      .filter((category) => favoriteKeys.has(this.favoriteKey('category', category.id)))
+      .map((category): FavoriteItem => ({ type: 'category', item: category }));
+    const memoryItems = this.allMemories()
+      .filter((memory) => favoriteKeys.has(this.favoriteKey('memory', memory.id)))
+      .map((memory): FavoriteItem => ({ type: 'memory', item: memory }));
+
+    return [...categoryItems, ...memoryItems];
   });
 
   readonly showRootDashboard = computed(() => !this.currentCategoryId() && !this.hasMemoryFilters());
@@ -213,6 +278,10 @@ export class WorkspaceComponent implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy(): void {
+    this.saveExpandedMemoryIfNeeded();
+  }
+
   toggleSidebarPinned(): void {
     this.sidebarPinned.update((pinned) => !pinned);
   }
@@ -220,24 +289,30 @@ export class WorkspaceComponent implements OnInit {
   loadData(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.appLoading.start();
 
     forkJoin({
       colors: this.colorsApi.list(),
       categories: this.categoriesApi.list(),
       memories: this.memoriesApi.list(this.currentMemoryFilters()),
       allMemories: this.memoriesApi.list(),
-    }).subscribe({
-      next: ({ colors, categories, memories, allMemories }) => {
+      favoriteSets: this.setsApi.list().pipe(catchError(() => of([]))),
+    }).pipe(
+      finalize(() => {
+        this.loading.set(false);
+        this.appLoading.stop();
+      }),
+    ).subscribe({
+      next: ({ colors, categories, memories, allMemories, favoriteSets }) => {
         this.colors.set(colors);
         this.categories.set(categories);
         this.memories.set(memories);
         this.allMemories.set(allMemories);
+        this.favoriteSets.set(favoriteSets);
       },
       error: () => {
         this.error.set('Nao foi possivel carregar os cadastros. Verifique se a API esta ativa.');
-        this.loading.set(false);
       },
-      complete: () => this.loading.set(false),
     });
   }
 
@@ -260,6 +335,127 @@ export class WorkspaceComponent implements OnInit {
   openEditMemory(memory: Memory): void {
     this.editingMemory.set(memory);
     this.activeDialog.set('memory');
+  }
+
+  expandMemoryFromDialog(payload: MemoryPayload): void {
+    const editing = this.editingMemory();
+
+    if (editing) {
+      const expandedMemory = this.memoryFromPayload(editing, payload);
+      this.openExpandedMemory(expandedMemory);
+      this.closeAfterSave();
+      return;
+    }
+
+    if (this.saving()) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.memoriesApi.create(payload).subscribe({
+      next: (memory) => {
+        this.toastr.success('Memoria criada com sucesso.');
+        this.closeAfterSave();
+        this.openExpandedMemory(memory);
+        this.loadMemories();
+        this.loadDashboardMemories();
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      complete: () => this.saving.set(false),
+    });
+  }
+
+  openExpandedMemory(memory: Memory): void {
+    this.expandedMemory.set(memory);
+    this.expandedNoteForm.reset({
+      title: memory.title,
+      content: memory.content,
+    });
+    this.expandedLastSavedSnapshot = this.expandedSnapshot();
+  }
+
+  closeExpandedMemory(): void {
+    this.saveExpandedMemoryIfNeeded();
+    this.expandedMemory.set(null);
+  }
+
+  toggleQuickSettings(type: QuickSettingsTarget['type'], id: string, event: Event): void {
+    event.stopPropagation();
+    const current = this.quickSettingsTarget();
+
+    if (current?.type === type && current.id === id) {
+      this.quickSettingsTarget.set(null);
+      return;
+    }
+
+    this.quickSettingsTarget.set({ type, id });
+  }
+
+  quickSettingsOpen(type: QuickSettingsTarget['type'], id: string): boolean {
+    const current = this.quickSettingsTarget();
+
+    return current?.type === type && current.id === id;
+  }
+
+  editCategoryFromQuickSettings(category: Category, event: Event): void {
+    event.stopPropagation();
+    this.quickSettingsTarget.set(null);
+    this.editingCategory.set(category);
+    this.activeDialog.set('category');
+  }
+
+  editMemoryFromQuickSettings(memory: Memory, event: Event): void {
+    event.stopPropagation();
+    this.quickSettingsTarget.set(null);
+    this.openEditMemory(memory);
+  }
+
+  updateCategoryColor(category: Category, color: NoteColor | null, event: Event): void {
+    event.stopPropagation();
+
+    if (this.saving()) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.categoriesApi.update(category.id, {
+      label: category.label,
+      description: category.description,
+      color,
+      parent_id: category.parent_id,
+    }).subscribe({
+      next: (updatedCategory) => {
+        this.categories.update((categories) => categories.map((item) => item.id === updatedCategory.id ? updatedCategory : item));
+        this.toastr.success('Cor atualizada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      complete: () => this.saving.set(false),
+    });
+  }
+
+  updateMemoryColor(memory: Memory, color: NoteColor | null, event: Event): void {
+    event.stopPropagation();
+
+    if (this.saving()) {
+      return;
+    }
+
+    this.saving.set(true);
+    this.memoriesApi.update(memory.id, {
+      title: memory.title,
+      content: memory.content,
+      color,
+      due_date: memory.due_date,
+      category_ids: memory.categories.map((category) => category.id),
+    }).subscribe({
+      next: (updatedMemory) => {
+        this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
+        this.allMemories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
+        this.toastr.success('Cor atualizada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      complete: () => this.saving.set(false),
+    });
   }
 
   closeDialog(): void {
@@ -411,9 +607,9 @@ export class WorkspaceComponent implements OnInit {
       : this.memoriesApi.create(finalPayload);
 
     request.subscribe({
-      next: () => {
-        this.toastr.success(editing ? 'Memoria atualizada com sucesso.' : 'Memoria criada com sucesso.');
-        this.closeAfterSave();
+      next: (memory) => {
+        this.editingMemory.set(memory);
+        this.toastr.success(editing ? 'Memoria salva automaticamente.' : 'Memoria criada com sucesso.');
         this.loadMemories();
         this.loadDashboardMemories();
       },
@@ -434,18 +630,35 @@ export class WorkspaceComponent implements OnInit {
 
   startMemoryDrag(memory: Memory, event: DragEvent): void {
     this.draggedMemory.set(memory);
+    this.draggedCategory.set(null);
     event.dataTransfer?.setData('text/plain', memory.id);
     event.dataTransfer?.setDragImage(event.currentTarget as Element, 20, 20);
   }
 
-  endMemoryDrag(): void {
+  startCategoryDrag(category: Category, event: DragEvent): void {
+    this.draggedCategory.set(category);
     this.draggedMemory.set(null);
+    event.dataTransfer?.setData('text/plain', category.id);
+    event.dataTransfer?.setDragImage(event.currentTarget as Element, 20, 20);
+  }
+
+  endItemDrag(): void {
+    this.draggedMemory.set(null);
+    this.draggedCategory.set(null);
     this.dropCategoryId.set(null);
     this.dropMemoryId.set(null);
+    this.dropMemoryIntent.set('inside');
   }
 
   allowCategoryDrop(category: Category, event: DragEvent): void {
-    if (!this.draggedMemory()) {
+    const draggedMemory = this.draggedMemory();
+    const draggedCategory = this.draggedCategory();
+
+    if (!draggedMemory && !draggedCategory) {
+      return;
+    }
+
+    if (draggedCategory && draggedCategory.id === category.id) {
       return;
     }
 
@@ -462,6 +675,7 @@ export class WorkspaceComponent implements OnInit {
 
     event.preventDefault();
     this.dropMemoryId.set(memory.id);
+    this.dropMemoryIntent.set(this.resolveDropIntent(event));
   }
 
   leaveDropTarget(event: DragEvent): void {
@@ -480,7 +694,7 @@ export class WorkspaceComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     const memory = this.draggedMemory();
-    this.endMemoryDrag();
+    this.endItemDrag();
 
     if (!memory || memory.categories.some((item) => item.id === category.id)) {
       return;
@@ -489,17 +703,66 @@ export class WorkspaceComponent implements OnInit {
     this.confirmTarget.set({ type: 'move-to-category', memory, category });
   }
 
+  dropOnCategory(category: Category, event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const draggedCategory = this.draggedCategory();
+
+    if (draggedCategory) {
+      this.reorderCategories(draggedCategory, category);
+      this.endItemDrag();
+      return;
+    }
+
+    this.dropMemoryOnCategory(category, event);
+  }
+
   dropMemoryOnMemory(target: Memory, event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     const source = this.draggedMemory();
-    this.endMemoryDrag();
+    this.endItemDrag();
 
     if (!source || source.id === target.id) {
       return;
     }
 
-    this.confirmTarget.set({ type: 'group-memories', source, target });
+    const intent = this.resolveDropIntent(event);
+
+    if (intent === 'inside') {
+      this.confirmTarget.set({ type: 'group-memories', source, target });
+      return;
+    }
+
+    this.reorderMemories(source, target, intent);
+  }
+
+  private reorderCategories(source: Category, target: Category): void {
+    const visibleCategories = this.visibleCategories();
+
+    if (!visibleCategories.some((category) => category.id === source.id) || !visibleCategories.some((category) => category.id === target.id)) {
+      return;
+    }
+
+    const reordered = this.moveItemBefore(visibleCategories, source.id, target.id);
+    this.saveStoredOrder(this.categoryOrderKey(this.hasMemoryFilters() ? 'filtered' : this.currentCategoryId()), reordered);
+    this.categories.update((categories) => this.mergeOrderedItems(categories, reordered));
+    this.filteredCategories.update((categories) => this.mergeOrderedItems(categories, reordered));
+  }
+
+  private reorderMemories(source: Memory, target: Memory, intent: Exclude<DropIntent, 'inside'>): void {
+    const visibleMemories = this.visibleMemories();
+
+    if (!visibleMemories.some((memory) => memory.id === source.id) || !visibleMemories.some((memory) => memory.id === target.id)) {
+      return;
+    }
+
+    const reordered = intent === 'before'
+      ? this.moveItemBefore(visibleMemories, source.id, target.id)
+      : this.moveItemAfter(visibleMemories, source.id, target.id);
+    this.saveStoredOrder(this.memoryOrderKey(), reordered);
+    this.memories.set(reordered);
   }
 
   closeConfirmDialog(): void {
@@ -586,6 +849,51 @@ export class WorkspaceComponent implements OnInit {
     }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
   }
 
+  isFavorite(type: FavoriteItem['type'], id: string): boolean {
+    return this.favoriteKeys().includes(this.favoriteKey(type, id));
+  }
+
+  toggleFavorite(type: FavoriteItem['type'], id: string, event: Event): void {
+    event.stopPropagation();
+    const key = this.favoriteKey(type, id);
+
+    this.favoriteKeys.update((keys) => {
+      const nextKeys = keys.includes(key)
+        ? keys.filter((item) => item !== key)
+        : [...keys, key];
+
+      localStorage.setItem('memory.io.favorites', JSON.stringify(nextKeys));
+      return nextKeys;
+    });
+  }
+
+  openFavoriteItem(favorite: FavoriteItem): void {
+    if (favorite.type === 'category') {
+      this.goToCategory(favorite.item);
+      return;
+    }
+
+    this.openEditMemory(favorite.item);
+  }
+
+  setTitle(set: MemorySet): string {
+    return set.title || set.name || 'Favorito sem titulo';
+  }
+
+  setDescription(set: MemorySet): string {
+    if (set.description) {
+      return set.description;
+    }
+
+    const totalCards = set.cards?.length ?? 0;
+
+    if (totalCards === 0) {
+      return 'Sem memorias favoritas ainda.';
+    }
+
+    return totalCards === 1 ? '1 memoria favorita' : `${totalCards} memorias favoritas`;
+  }
+
   logout(): void {
     this.authApi.logout().subscribe({ error: () => undefined });
     this.authStore.clear();
@@ -670,6 +978,56 @@ export class WorkspaceComponent implements OnInit {
       next: (memories) => this.allMemories.set(memories),
       error: () => undefined,
     });
+  }
+
+  saveExpandedMemoryIfNeeded(): void {
+    const memory = this.expandedMemory();
+
+    if (!memory || this.expandedNoteForm.invalid || this.saving()) {
+      return;
+    }
+
+    const snapshot = this.expandedSnapshot();
+
+    if (snapshot === this.expandedLastSavedSnapshot) {
+      return;
+    }
+
+    const value = this.expandedNoteForm.getRawValue();
+    const payload: MemoryPayload = {
+      title: value.title ?? '',
+      content: value.content ?? '',
+      color: memory.color,
+      due_date: memory.due_date,
+      category_ids: memory.categories.map((category) => category.id),
+    };
+
+    this.saving.set(true);
+    this.memoriesApi.update(memory.id, payload).subscribe({
+      next: (updatedMemory) => {
+        this.expandedMemory.set(updatedMemory);
+        this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
+        this.allMemories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
+        this.expandedLastSavedSnapshot = snapshot;
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      complete: () => this.saving.set(false),
+    });
+  }
+
+  private expandedSnapshot(): string {
+    return JSON.stringify(this.expandedNoteForm.getRawValue());
+  }
+
+  private memoryFromPayload(memory: Memory, payload: MemoryPayload): Memory {
+    return {
+      ...memory,
+      title: payload.title,
+      content: payload.content,
+      color: payload.color,
+      due_date: payload.due_date,
+      categories: this.categories().filter((category) => payload.category_ids.includes(category.id)),
+    };
   }
 
   private deleteCategory(category: Category): void {
@@ -768,6 +1126,135 @@ export class WorkspaceComponent implements OnInit {
       sortBy,
       sortDirection: filters.sortDirection,
     };
+  }
+
+  private applyStoredOrder<T extends ReorderItem>(items: T[], key: string): T[] {
+    const storedIds = this.readStoredOrder(key);
+
+    if (!storedIds.length) {
+      return items;
+    }
+
+    const orderMap = new Map(storedIds.map((id, index) => [id, index]));
+
+    return [...items].sort((left, right) => {
+      const leftIndex = orderMap.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = orderMap.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+
+      return leftIndex - rightIndex;
+    });
+  }
+
+  private moveItemBefore<T extends ReorderItem>(items: T[], sourceId: string, targetId: string): T[] {
+    const nextItems = [...items];
+    const sourceIndex = nextItems.findIndex((item) => item.id === sourceId);
+    const targetIndex = nextItems.findIndex((item) => item.id === targetId);
+
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+      return nextItems;
+    }
+
+    const [source] = nextItems.splice(sourceIndex, 1);
+    const insertIndex = nextItems.findIndex((item) => item.id === targetId);
+    nextItems.splice(insertIndex, 0, source);
+
+    return nextItems;
+  }
+
+  private moveItemAfter<T extends ReorderItem>(items: T[], sourceId: string, targetId: string): T[] {
+    const nextItems = [...items];
+    const sourceIndex = nextItems.findIndex((item) => item.id === sourceId);
+    const targetIndex = nextItems.findIndex((item) => item.id === targetId);
+
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+      return nextItems;
+    }
+
+    const [source] = nextItems.splice(sourceIndex, 1);
+    const nextTargetIndex = nextItems.findIndex((item) => item.id === targetId);
+    nextItems.splice(nextTargetIndex + 1, 0, source);
+
+    return nextItems;
+  }
+
+  private resolveDropIntent(event: DragEvent): DropIntent {
+    const target = event.currentTarget as HTMLElement | null;
+
+    if (!target) {
+      return 'inside';
+    }
+
+    const rect = target.getBoundingClientRect();
+    const position = (event.clientX - rect.left) / rect.width;
+
+    if (position < 0.24) {
+      return 'before';
+    }
+
+    if (position > 0.76) {
+      return 'after';
+    }
+
+    return 'inside';
+  }
+
+  private mergeOrderedItems<T extends ReorderItem>(items: T[], orderedItems: T[]): T[] {
+    const orderedIds = new Set(orderedItems.map((item) => item.id));
+
+    return [
+      ...orderedItems,
+      ...items.filter((item) => !orderedIds.has(item.id)),
+    ];
+  }
+
+  private saveStoredOrder(key: string, items: ReorderItem[]): void {
+    localStorage.setItem(key, JSON.stringify(items.map((item) => item.id)));
+  }
+
+  private readStoredOrder(key: string): string[] {
+    const raw = localStorage.getItem(key);
+
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const value = JSON.parse(raw);
+      return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private categoryOrderKey(scope: string | null): string {
+    return `memory.io.category-order.${scope ?? 'root'}`;
+  }
+
+  private memoryOrderKey(): string {
+    if (this.hasMemoryFilters()) {
+      return `memory.io.memory-order.filtered.${JSON.stringify(this.memoryFilters())}`;
+    }
+
+    return `memory.io.memory-order.${this.currentCategoryId() ?? 'root'}`;
+  }
+
+  private favoriteKey(type: FavoriteItem['type'], id: string): string {
+    return `${type}:${id}`;
+  }
+
+  private readFavoriteKeys(): string[] {
+    const raw = localStorage.getItem('memory.io.favorites');
+
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const value = JSON.parse(raw);
+      return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+    } catch {
+      return [];
+    }
   }
 
   private scheduleLoadMemories(): void {

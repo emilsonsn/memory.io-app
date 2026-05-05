@@ -1,13 +1,14 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faChevronDown, faCopy, faTimes, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faCopy, faExpand, faTimes, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../../models';
 
 @Component({
   selector: 'app-memory-dialog',
-  imports: [FontAwesomeModule, ReactiveFormsModule],
+  imports: [FontAwesomeModule, QuillModule, ReactiveFormsModule],
   templateUrl: './memory-dialog.component.html',
   styleUrl: './memory-dialog.component.scss',
 })
@@ -24,15 +25,25 @@ export class MemoryDialogComponent implements OnChanges {
 
   @Output() closeDialog = new EventEmitter<void>();
   @Output() saveMemory = new EventEmitter<MemoryPayload>();
+  @Output() expandMemory = new EventEmitter<MemoryPayload>();
 
   advancedOpen = false;
   categoriesOpen = false;
   contentCopied = false;
+  private lastSavedSnapshot = '';
   readonly icons = {
     chevronDown: faChevronDown,
     copy: faCopy,
+    expand: faExpand,
     remove: faTimes,
     close: faXmark,
+  };
+  readonly compactEditorModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'],
+    ],
   };
 
   readonly form = this.fb.group({
@@ -58,6 +69,7 @@ export class MemoryDialogComponent implements OnChanges {
           ? this.memory.categories.map((category) => category.id)
           : this.defaultCategoryId ? [this.defaultCategoryId] : [],
       });
+      this.lastSavedSnapshot = this.formSnapshot();
     }
   }
 
@@ -82,6 +94,12 @@ export class MemoryDialogComponent implements OnChanges {
     this.form.controls.category_ids.setValue(nextSelectedIds);
     this.form.controls.category_ids.markAsDirty();
     this.form.controls.category_ids.markAsTouched();
+  }
+
+  selectColor(color: NoteColor | null): void {
+    this.form.controls.color.setValue(color);
+    this.form.controls.color.markAsDirty();
+    this.form.controls.color.markAsTouched();
   }
 
   isCategorySelected(categoryId: string): boolean {
@@ -109,7 +127,7 @@ export class MemoryDialogComponent implements OnChanges {
   }
 
   copyContent(): void {
-    const content = this.form.controls.content.value ?? '';
+    const content = this.htmlToText(this.form.controls.content.value ?? '');
 
     if (!content.trim()) {
       return;
@@ -125,20 +143,64 @@ export class MemoryDialogComponent implements OnChanges {
     }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
   }
 
+  expandNote(): void {
+    if (this.form.invalid) {
+      return;
+    }
+
+    this.expandMemory.emit(this.memoryPayload());
+  }
+
+  requestClose(): void {
+    this.saveIfNeeded();
+    this.closeDialog.emit();
+  }
+
   submit(): void {
+    this.saveIfNeeded();
+  }
+
+  saveOnFocusOut(event: FocusEvent): void {
+    if (event.currentTarget instanceof HTMLElement && event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+
+    this.saveIfNeeded();
+  }
+
+  saveIfNeeded(): void {
     if (this.form.invalid || this.saving) {
       return;
     }
 
+    const snapshot = this.formSnapshot();
+
+    if (snapshot === this.lastSavedSnapshot) {
+      return;
+    }
+
+    this.saveMemory.emit(this.memoryPayload());
+    this.lastSavedSnapshot = snapshot;
+  }
+
+  private memoryPayload(): MemoryPayload {
     const value = this.form.getRawValue();
 
-    this.saveMemory.emit({
+    return {
       title: value.title ?? '',
       content: value.content ?? '',
       color: value.color,
       due_date: value.due_date || null,
       category_ids: value.category_ids ?? [],
-    });
+    };
+  }
+
+  private formSnapshot(): string {
+    return JSON.stringify(this.form.getRawValue());
+  }
+
+  hasRichContent(): boolean {
+    return /<\/?[a-z][\s\S]*>/i.test(this.form.controls.content.value ?? '');
   }
 
   private parentName(parentId: string): string {
@@ -167,5 +229,11 @@ export class MemoryDialogComponent implements OnChanges {
     textarea.select();
     document.execCommand('copy');
     textarea.remove();
+  }
+
+  private htmlToText(value: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = value;
+    return container.textContent ?? container.innerText ?? value;
   }
 }
