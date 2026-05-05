@@ -88,24 +88,44 @@
   <section class="content-area">
     <header class="page-header">
       <div>
-        <nav class="breadcrumbs" aria-label="Caminho atual">
-          <button type="button" (click)="goToRoot()">Raiz</button>
-          @for (category of breadcrumb(); track category.id) {
-            <span>/</span>
-            <button type="button" (click)="goToCategory(category)">{{ category.label }}</button>
-          }
-        </nav>
+        @if (expandedMemory()) {
+          <form class="expanded-title-form" [formGroup]="expandedNoteForm" (focusout)="saveExpandedMemoryIfNeeded()">
+            <input
+              type="text"
+              formControlName="title"
+              aria-label="Titulo da memoria"
+              placeholder="Titulo"
+            >
+            
+          </form>
+        } @else {
+          <nav class="breadcrumbs" aria-label="Caminho atual">
+            <button type="button" (click)="goToRoot()">Raiz</button>
+            @for (category of breadcrumb(); track category.id) {
+              <span>/</span>
+              <button type="button" (click)="goToCategory(category)">{{ category.label }}</button>
+            }
+          </nav>
 
-        <h1>{{ pageTitle() }}</h1>
-        <p class="muted">{{ currentCategory()?.description ?? 'Categorias e memorias sem categoria.' }}</p>
+          @if (currentCategory()) {
+            <h1>{{ pageTitle() }}</h1>
+            <p class="muted">{{ currentCategory()?.description }}</p>
+          }
+        }
       </div>
 
       <div class="header-actions">
-        @if (currentCategory()) {
-          <button class="ghost-button compact" type="button" (click)="goUp()">Voltar</button>
+        @if (expandedMemory()) {
+          <button class="ghost-button compact expanded-close-button" type="button" aria-label="Fechar nota" title="Fechar nota" (click)="closeExpandedMemory()">
+            <fa-icon [icon]="icons.close" aria-hidden="true" />
+          </button>
+        } @else {
+          @if (currentCategory()) {
+            <button class="ghost-button compact" type="button" (click)="goUp()">Voltar</button>
+          }
+          <button class="ghost-button compact" type="button" (click)="openCreateCategory()">Nova categoria</button>
+          <button class="primary-button compact" type="button" (click)="openCreateMemory()">Nova memoria</button>
         }
-        <button class="ghost-button compact" type="button" (click)="openCreateCategory()">Nova categoria</button>
-        <button class="primary-button compact" type="button" (click)="openCreateMemory()">Nova memoria</button>
       </div>
     </header>
 
@@ -115,7 +135,7 @@
       <p class="form-error">{{ error() }}</p>
     }
 
-    @if (showRootDashboard()) {
+    @if (!expandedMemory() && showRootDashboard()) {
       <section class="dashboard-grid" aria-label="Resumo da biblioteca">
         @for (stat of dashboardStats(); track stat.label) {
           <article class="dashboard-card">
@@ -131,6 +151,7 @@
       </section>
     }
 
+    @if (!expandedMemory()) {
     <section class="search-panel" aria-label="Pesquisar memorias">
       <div class="search-shell">
         <mat-form-field class="search-box" appearance="fill" subscriptSizing="dynamic">
@@ -156,6 +177,95 @@
       <div class="quick-filters">
       </div>
     </section>
+    }
+
+    @if (expandedMemory()) {
+      <form class="expanded-editor-shell" [formGroup]="expandedNoteForm" (focusout)="saveExpandedMemoryIfNeeded()">
+        <quill-editor
+          class="workspace-note-editor"
+          formControlName="content"
+          placeholder="Escreva sua memoria..."
+          theme="snow"
+        />
+      </form>
+    } @else {
+    @if (hasRootSections()) {
+      <section class="library-section" aria-labelledby="favorites-title">
+        <h2 id="favorites-title">Favoritos</h2>
+        @if (favoriteItems().length > 0) {
+          <div class="library-grid">
+            @for (favorite of favoriteItems(); track favorite.type + favorite.item.id) {
+              <article
+                class="favorite-set-card"
+                role="button"
+                tabindex="0"
+                (click)="openFavoriteItem(favorite)"
+                (keyup.enter)="openFavoriteItem(favorite)"
+              >
+                <button
+                  type="button"
+                  class="favorite-button active"
+                  title="Remover dos favoritos"
+                  aria-label="Remover dos favoritos"
+                  (click)="toggleFavorite(favorite.type, favorite.item.id, $event)"
+                >
+                  <fa-icon [icon]="icons.star" aria-hidden="true" />
+                </button>
+                @if (favorite.type === 'category') {
+                  @if (favorite.item.parent_id) {
+                    <span class="category-box-icon {{ favorite.item.color ?? 'gray' }}" aria-hidden="true">
+                      <fa-icon [icon]="icons.box" />
+                    </span>
+                  } @else {
+                    <span class="folder-icon {{ favorite.item.color ?? 'gray' }}" aria-hidden="true"></span>
+                  }
+                  <div>
+                    <h3>{{ favorite.item.label }}</h3>
+                    <p>{{ favorite.item.description }}</p>
+                  </div>
+                } @else {
+                  <span class="favorite-set-icon" aria-hidden="true">
+                    <fa-icon [icon]="icons.note" />
+                  </span>
+                  <div>
+                    <h3>{{ favorite.item.title }}</h3>
+                    <p class="memory-preview" [innerHTML]="favorite.item.content"></p>
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="section-empty">Nenhum favorito por enquanto.</p>
+        }
+      </section>
+
+      <section class="library-section" aria-labelledby="recent-title">
+        <h2 id="recent-title">Recentes</h2>
+        @if (recentMemories().length > 0) {
+          <div class="library-grid">
+            @for (memory of recentMemories(); track memory.id) {
+              <article class="memory-card compact-memory-card" role="button" tabindex="0" (click)="openEditMemory(memory)" (keyup.enter)="openEditMemory(memory)">
+                <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
+                <h2>{{ memory.title }}</h2>
+                <div class="memory-preview" [innerHTML]="memory.content"></div>
+                <div class="tag-row">
+                  @for (category of memory.categories; track category.id) {
+                    <span class="tag">{{ category.label }}</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="section-empty">Nenhuma memoria recente.</p>
+        }
+      </section>
+
+      <div class="library-section-title">
+        <h2 id="general-title">Geral</h2>
+      </div>
+    }
 
     <section class="library-grid">
       @for (category of visibleCategories(); track category.id) {
@@ -163,14 +273,73 @@
           class="folder-card"
           role="button"
           tabindex="0"
+          draggable="true"
           [class.drop-target]="dropCategoryId() === category.id"
+          [class.drop-before]="dropCategoryId() === category.id"
           (click)="enterCategory(category)"
           (keyup.enter)="enterCategory(category)"
+          (dragstart)="startCategoryDrag(category, $event)"
+          (dragend)="endItemDrag()"
           (dragover)="allowCategoryDrop(category, $event)"
           (dragleave)="leaveDropTarget($event)"
-          (drop)="dropMemoryOnCategory(category, $event)"
+          (drop)="dropOnCategory(category, $event)"
         >
-          <div class="folder-icon {{ category.color ?? 'gray' }}"></div>
+          <button
+            type="button"
+            class="favorite-button"
+            [class.active]="isFavorite('category', category.id)"
+            [title]="isFavorite('category', category.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+            [attr.aria-label]="isFavorite('category', category.id) ? 'Remover categoria dos favoritos' : 'Adicionar categoria aos favoritos'"
+            (click)="toggleFavorite('category', category.id, $event)"
+          >
+            <fa-icon [icon]="icons.star" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            class="card-settings-button"
+            title="Configuracoes rapidas"
+            aria-label="Configuracoes rapidas da categoria"
+            [class.active]="quickSettingsOpen('category', category.id)"
+            (click)="toggleQuickSettings('category', category.id, $event)"
+          >
+            <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
+          </button>
+
+          @if (quickSettingsOpen('category', category.id)) {
+            <div class="quick-settings-menu" (click)="$event.stopPropagation()">
+              <button type="button" (click)="editCategoryFromQuickSettings(category, $event)">Editar titulo e descricao</button>
+              <span>Cor</span>
+              <div class="color-swatch-row">
+                <button
+                  type="button"
+                  class="color-swatch gray"
+                  title="Padrao"
+                  aria-label="Usar cor padrao"
+                  [class.selected]="!category.color"
+                  (click)="updateCategoryColor(category, null, $event)"
+                ></button>
+                @for (color of colors(); track color.value) {
+                  <button
+                    type="button"
+                    class="color-swatch {{ color.value }}"
+                    [title]="color.label"
+                    [attr.aria-label]="'Alterar cor para ' + color.label"
+                    [class.selected]="category.color === color.value"
+                    (click)="updateCategoryColor(category, color.value, $event)"
+                  ></button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (category.parent_id) {
+            <div class="category-box-icon {{ category.color ?? 'gray' }}">
+              <fa-icon [icon]="icons.box" aria-hidden="true" />
+            </div>
+          } @else {
+            <div class="folder-icon {{ category.color ?? 'gray' }}"></div>
+          }
           <div>
             <h2>{{ category.label }}</h2>
             <p>{{ category.description }}</p>
@@ -197,14 +366,66 @@
           tabindex="0"
           draggable="true"
           [class.drop-target]="dropMemoryId() === memory.id"
+          [class.drop-before]="dropMemoryId() === memory.id && dropMemoryIntent() === 'before'"
+          [class.drop-after]="dropMemoryId() === memory.id && dropMemoryIntent() === 'after'"
+          [class.drop-inside]="dropMemoryId() === memory.id && dropMemoryIntent() === 'inside'"
           (click)="openEditMemory(memory)"
           (keyup.enter)="openEditMemory(memory)"
           (dragstart)="startMemoryDrag(memory, $event)"
-          (dragend)="endMemoryDrag()"
+          (dragend)="endItemDrag()"
           (dragover)="allowMemoryDrop(memory, $event)"
           (dragleave)="leaveDropTarget($event)"
           (drop)="dropMemoryOnMemory(memory, $event)"
         >
+          <button
+            type="button"
+            class="favorite-button"
+            [class.active]="isFavorite('memory', memory.id)"
+            [title]="isFavorite('memory', memory.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+            [attr.aria-label]="isFavorite('memory', memory.id) ? 'Remover memoria dos favoritos' : 'Adicionar memoria aos favoritos'"
+            (click)="toggleFavorite('memory', memory.id, $event)"
+          >
+            <fa-icon [icon]="icons.star" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            class="card-settings-button"
+            title="Configuracoes rapidas"
+            aria-label="Configuracoes rapidas da memoria"
+            [class.active]="quickSettingsOpen('memory', memory.id)"
+            (click)="toggleQuickSettings('memory', memory.id, $event)"
+          >
+            <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
+          </button>
+
+          @if (quickSettingsOpen('memory', memory.id)) {
+            <div class="quick-settings-menu" (click)="$event.stopPropagation()">
+              <button type="button" (click)="editMemoryFromQuickSettings(memory, $event)">Editar titulo e descricao</button>
+              <span>Cor</span>
+              <div class="color-swatch-row">
+                <button
+                  type="button"
+                  class="color-swatch gray"
+                  title="Padrao"
+                  aria-label="Usar cor padrao"
+                  [class.selected]="!memory.color"
+                  (click)="updateMemoryColor(memory, null, $event)"
+                ></button>
+                @for (color of colors(); track color.value) {
+                  <button
+                    type="button"
+                    class="color-swatch {{ color.value }}"
+                    [title]="color.label"
+                    [attr.aria-label]="'Alterar cor para ' + color.label"
+                    [class.selected]="memory.color === color.value"
+                    (click)="updateMemoryColor(memory, color.value, $event)"
+                  ></button>
+                }
+              </div>
+            </div>
+          }
+
           <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
           <h2>{{ memory.title }}</h2>
           <div class="memory-content">
@@ -217,7 +438,7 @@
             >
               <fa-icon [icon]="icons.copy" aria-hidden="true" />
             </button>
-            <p>{{ memory.content }}</p>
+            <div class="memory-preview" [innerHTML]="memory.content"></div>
           </div>
           <div class="tag-row">
             @for (category of memory.categories; track category.id) {
@@ -253,6 +474,8 @@
       }
     </section>
 
+    }
+
     @if (!loading() && visibleCategories().length === 0 && visibleMemories().length === 0) {
       <section class="empty-state">
         <h2>Nada por aqui ainda</h2>
@@ -287,6 +510,7 @@
       [saving]="saving()"
       (closeDialog)="closeDialog()"
       (saveMemory)="saveMemory($event)"
+      (expandMemory)="expandMemoryFromDialog($event)"
     />
   }
 

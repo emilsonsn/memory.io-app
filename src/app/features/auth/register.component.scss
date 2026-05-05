@@ -1,1 +1,38 @@
 @use './auth-form';
+
+.auth-shell {
+  background:
+    radial-gradient(circle at top left, rgba(109, 59, 220, 0.06), transparent 34%),
+    #fdfcff;
+}
+
+.auth-panel {
+  width: min(100%, 390px);
+  padding: 22px 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auth-logo {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 auto 4px;
+}
+
+.auth-logo img {
+  display: block;
+  width: 174px;
+  height: auto;
+}
+
+.auth-panel h1 {
+  font-size: 1.25rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.auth-panel .muted {
+  margin-top: -8px;
+  text-align: center;
+}

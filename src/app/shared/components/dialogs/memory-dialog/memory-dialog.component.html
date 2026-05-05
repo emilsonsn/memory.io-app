@@ -1,5 +1,11 @@
-<div class="dialog-backdrop" (click)="closeDialog.emit()">
-  <form class="dialog-panel note-dialog" [formGroup]="form" (ngSubmit)="submit()" (click)="$event.stopPropagation()">
+<div class="dialog-backdrop" (click)="requestClose()">
+  <form
+    class="dialog-panel note-dialog"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    (focusout)="saveOnFocusOut($event)"
+    (click)="$event.stopPropagation()"
+  >
     <header class="note-header">
       <button
         class="copy-content-button"
@@ -10,7 +16,7 @@
       >
         <fa-icon [icon]="icons.copy" aria-hidden="true" />
       </button>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeDialog.emit()">
+      <button class="icon-button" type="button" aria-label="Fechar" (click)="requestClose()">
         <fa-icon [icon]="icons.close" aria-hidden="true" />
       </button>
     </header>
@@ -24,13 +30,13 @@
         placeholder="Titulo"
       >
 
-      <textarea
-        class="note-content"
-        rows="10"
+      <quill-editor
+        class="compact-note-editor"
         formControlName="content"
-        aria-label="Conteudo"
         placeholder="Criar uma nota..."
-      ></textarea>
+        theme="snow"
+        [modules]="compactEditorModules"
+      />
     </div>
 
     @if (advancedOpen) {
@@ -38,12 +44,26 @@
         <div class="form-grid">
           <label>
             Cor
-            <select formControlName="color">
-              <option [ngValue]="null">Padrao</option>
+            <div class="dialog-color-picker" role="radiogroup" aria-label="Cor da memoria">
+              <button
+                type="button"
+                class="color-swatch gray"
+                title="Padrao"
+                aria-label="Padrao"
+                [class.selected]="!form.controls.color.value"
+                (click)="selectColor(null)"
+              ></button>
               @for (color of colors; track color.value) {
-                <option [ngValue]="color.value">{{ color.label }}</option>
+                <button
+                  type="button"
+                  class="color-swatch {{ color.value }}"
+                  [title]="color.label"
+                  [attr.aria-label]="color.label"
+                  [class.selected]="form.controls.color.value === color.value"
+                  (click)="selectColor(color.value)"
+                ></button>
               }
-            </select>
+            </div>
           </label>
 
           <label>
@@ -101,13 +121,13 @@
         [attr.aria-expanded]="advancedOpen"
         (click)="toggleAdvanced()"
       >
-        {{ advancedOpen ? 'Ocultar opcoes avancadas' : 'Opcoes avancadas' }}
+        {{ advancedOpen ? 'Ocultar opcoes' : '+ Mais opcoes' }}
       </button>
 
       <div class="action-group">
-        <button class="ghost-button" type="button" (click)="closeDialog.emit()">Cancelar</button>
-        <button class="primary-button" type="submit" [disabled]="form.invalid || saving">
-          {{ saving ? 'Salvando...' : 'Salvar memoria' }}
+        <button class="primary-button" type="button" (click)="expandNote()">
+          <fa-icon [icon]="icons.expand" aria-hidden="true" />
+          Expandir
         </button>
       </div>
     </div>

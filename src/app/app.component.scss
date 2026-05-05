@@ -1,0 +1,48 @@
+.app-shell {
+  min-height: 100vh;
+  transition: opacity 0.16s ease;
+}
+
+.app-shell.loading {
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  background: rgba(253, 252, 255, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+.app-loading-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  box-shadow: 0 16px 42px rgba(73, 43, 128, 0.1);
+  font-weight: 720;
+}
+
+.app-loading-mark {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(109, 59, 220, 0.18);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: app-loading-spin 0.75s linear infinite;
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

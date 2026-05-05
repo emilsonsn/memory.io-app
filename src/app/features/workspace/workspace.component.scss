@@ -115,11 +115,12 @@
 
 .folder-card h2,
 .memory-card h2 {
+  padding-right: 34px;
   overflow-wrap: anywhere;
 }
 
 .folder-card p,
-.memory-content p {
+.memory-preview {
   color: var(--muted);
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -129,7 +130,7 @@
   position: relative;
 }
 
-.memory-content p {
+.memory-preview {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
@@ -137,10 +138,14 @@
   padding-right: 38px;
 }
 
+.memory-preview :is(p, h1, h2, h3, ul, ol) {
+  margin: 0 0 6px;
+}
+
 .copy-memory-button {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
