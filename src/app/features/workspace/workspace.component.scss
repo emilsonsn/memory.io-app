@@ -54,6 +54,7 @@
 .breadcrumbs,
 .header-actions,
 .tag-row,
+.card-meta,
 .card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -140,6 +141,19 @@
 
 .memory-preview :is(p, h1, h2, h3, ul, ol) {
   margin: 0 0 6px;
+}
+
+.card-meta {
+  color: #93899e;
+  font-size: 0.76rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.card-meta span + span::before {
+  content: '•';
+  margin-right: 8px;
+  color: #c9c0d5;
 }
 
 .copy-memory-button {

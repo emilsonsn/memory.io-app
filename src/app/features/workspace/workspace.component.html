@@ -205,11 +205,17 @@
                 <button
                   type="button"
                   class="favorite-button active"
+                  [class.loading]="isFavoriteLoading(favorite.type, favorite.item.id)"
                   title="Remover dos favoritos"
                   aria-label="Remover dos favoritos"
+                  [disabled]="isFavoriteLoading(favorite.type, favorite.item.id)"
                   (click)="toggleFavorite(favorite.type, favorite.item.id, $event)"
                 >
-                  <fa-icon [icon]="icons.star" aria-hidden="true" />
+                  @if (isFavoriteLoading(favorite.type, favorite.item.id)) {
+                    <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+                  } @else {
+                    <fa-icon [icon]="icons.star" aria-hidden="true" />
+                  }
                 </button>
                 @if (favorite.type === 'category') {
                   @if (favorite.item.parent_id) {
@@ -222,6 +228,9 @@
                   <div>
                     <h3>{{ favorite.item.label }}</h3>
                     <p>{{ favorite.item.description }}</p>
+                    <div class="card-meta">
+                      <span>Atual. {{ favorite.item.updated_at | date:'dd/MM' }}</span>
+                    </div>
                   </div>
                 } @else {
                   <span class="favorite-set-icon" aria-hidden="true">
@@ -230,6 +239,12 @@
                   <div>
                     <h3>{{ favorite.item.title }}</h3>
                     <p class="memory-preview" [innerHTML]="favorite.item.content"></p>
+                    <div class="card-meta">
+                      <span>Atual. {{ favorite.item.updated_at | date:'dd/MM' }}</span>
+                      @if (favorite.item.due_date) {
+                        <span>Vence {{ favorite.item.due_date | date:'dd/MM' }}</span>
+                      }
+                    </div>
                   </div>
                 }
               </article>
@@ -237,28 +252,6 @@
           </div>
         } @else {
           <p class="section-empty">Nenhum favorito por enquanto.</p>
-        }
-      </section>
-
-      <section class="library-section" aria-labelledby="recent-title">
-        <h2 id="recent-title">Recentes</h2>
-        @if (recentMemories().length > 0) {
-          <div class="library-grid">
-            @for (memory of recentMemories(); track memory.id) {
-              <article class="memory-card compact-memory-card" role="button" tabindex="0" (click)="openEditMemory(memory)" (keyup.enter)="openEditMemory(memory)">
-                <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
-                <h2>{{ memory.title }}</h2>
-                <div class="memory-preview" [innerHTML]="memory.content"></div>
-                <div class="tag-row">
-                  @for (category of memory.categories; track category.id) {
-                    <span class="tag">{{ category.label }}</span>
-                  }
-                </div>
-              </article>
-            }
-          </div>
-        } @else {
-          <p class="section-empty">Nenhuma memoria recente.</p>
         }
       </section>
 
@@ -288,11 +281,17 @@
             type="button"
             class="favorite-button"
             [class.active]="isFavorite('category', category.id)"
+            [class.loading]="isFavoriteLoading('category', category.id)"
             [title]="isFavorite('category', category.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
             [attr.aria-label]="isFavorite('category', category.id) ? 'Remover categoria dos favoritos' : 'Adicionar categoria aos favoritos'"
+            [disabled]="isFavoriteLoading('category', category.id)"
             (click)="toggleFavorite('category', category.id, $event)"
           >
-            <fa-icon [icon]="icons.star" aria-hidden="true" />
+            @if (isFavoriteLoading('category', category.id)) {
+              <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+            } @else {
+              <fa-icon [icon]="icons.star" aria-hidden="true" />
+            }
           </button>
 
           <button
@@ -346,6 +345,9 @@
             @if (category.parent_id) {
               <span class="tag">Dentro de {{ parentName(category.parent_id) }}</span>
             }
+            <div class="card-meta">
+              <span>Atual. {{ category.updated_at | date:'dd/MM' }}</span>
+            </div>
           </div>
           <button
             type="button"
@@ -381,11 +383,17 @@
             type="button"
             class="favorite-button"
             [class.active]="isFavorite('memory', memory.id)"
+            [class.loading]="isFavoriteLoading('memory', memory.id)"
             [title]="isFavorite('memory', memory.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
             [attr.aria-label]="isFavorite('memory', memory.id) ? 'Remover memoria dos favoritos' : 'Adicionar memoria aos favoritos'"
+            [disabled]="isFavoriteLoading('memory', memory.id)"
             (click)="toggleFavorite('memory', memory.id, $event)"
           >
-            <fa-icon [icon]="icons.star" aria-hidden="true" />
+            @if (isFavoriteLoading('memory', memory.id)) {
+              <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+            } @else {
+              <fa-icon [icon]="icons.star" aria-hidden="true" />
+            }
           </button>
 
           <button
@@ -445,8 +453,11 @@
               <span class="tag">{{ category.label }}</span>
             }
             @if (memory.due_date) {
-              <span class="tag">{{ memory.due_date | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span class="tag">Vence {{ memory.due_date | date:'dd/MM' }}</span>
             }
+          </div>
+          <div class="card-meta">
+            <span>Atual. {{ memory.updated_at | date:'dd/MM' }}</span>
           </div>
           <button
             type="button"

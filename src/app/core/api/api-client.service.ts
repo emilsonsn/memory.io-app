@@ -24,8 +24,10 @@ export class ApiClientService {
     return this.http.patch<T | { data: T }>(`${this.apiBaseUrl}${path}`, payload).pipe(map((response) => this.unwrapResponse(response)));
   }
 
-  delete<T>(path: string): Observable<T> {
-    return this.http.delete<T | { data: T }>(`${this.apiBaseUrl}${path}`).pipe(map((response) => this.unwrapResponse(response)));
+  delete<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
+    return this.http.delete<T | { data: T }>(`${this.apiBaseUrl}${path}`, {
+      params: this.toParams(params),
+    }).pipe(map((response) => this.unwrapResponse(response)));
   }
 
   private toParams(params?: Record<string, string | number | boolean>): HttpParams {
