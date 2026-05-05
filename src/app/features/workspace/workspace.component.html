@@ -1,71 +1,46 @@
-<main class="workspace">
+<main class="workspace" [class.sidebar-pinned]="sidebarPinned()">
   <header class="topbar">
-    <div class="search-shell">
-      <mat-form-field class="search-box" appearance="fill" subscriptSizing="dynamic">
-        <mat-label>Pesquisar</mat-label>
-        <fa-icon matPrefix [icon]="icons.search" aria-hidden="true" />
-        <input
-          matInput
-          type="search"
-          [value]="memoryFilters().text ?? ''"
-          (input)="updateMemoryFilter('text', $any($event.target).value)"
-        >
-      </mat-form-field>
+    <div class="topbar-spacer"></div>
 
-      <div class="quick-filters">
-        <mat-form-field class="category-filter" appearance="fill" subscriptSizing="dynamic">
-          <mat-label>Categorias</mat-label>
-          <mat-select
-            multiple
-            panelClass="memory-filter-select-panel"
-            [value]="memoryFilters().categoryIds ?? []"
-            (selectionChange)="updateCategoryFilter($event.value)"
-          >
-            @for (category of sidebarCategories(); track category.id) {
-              <mat-option [value]="category.id">{{ categoryDisplay(category) }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field class="date-filter" appearance="fill" subscriptSizing="dynamic">
-          <mat-label>Criada de</mat-label>
-          <input
-            matInput
-            [matDatepicker]="createdFromPicker"
-            [value]="filterDateValue(memoryFilters().createdFrom)"
-            (dateChange)="updateDateFilter('createdFrom', $event.value)"
-          >
-          <mat-datepicker-toggle matIconSuffix [for]="createdFromPicker" />
-          <mat-datepicker #createdFromPicker />
-        </mat-form-field>
-
-        <mat-form-field class="date-filter" appearance="fill" subscriptSizing="dynamic">
-          <mat-label>Criada ate</mat-label>
-          <input
-            matInput
-            [matDatepicker]="createdToPicker"
-            [value]="filterDateValue(memoryFilters().createdTo)"
-            (dateChange)="updateDateFilter('createdTo', $event.value)"
-          >
-          <mat-datepicker-toggle matIconSuffix [for]="createdToPicker" />
-          <mat-datepicker #createdToPicker />
-        </mat-form-field>
-
-        <button mat-stroked-button type="button" (click)="openAdvancedFilters()">
-          <fa-icon [icon]="icons.sliders" aria-hidden="true" />
-          Avancados
-        </button>
-
-        @if (hasMemoryFilters()) {
-          <button mat-button type="button" (click)="clearMemoryFilters()">Limpar</button>
-        }
-      </div>
+    <div class="topbar-actions" aria-label="Acoes globais">
+      <button type="button" title="Configuracoes">
+        <fa-icon [icon]="icons.gear" aria-hidden="true" />
+      </button>
+      <button type="button" title="Notificacoes">
+        <fa-icon [icon]="icons.notification" aria-hidden="true" />
+      </button>
+      <button type="button" title="Perfil">
+        <fa-icon [icon]="icons.profile" aria-hidden="true" />
+      </button>
     </div>
   </header>
 
   <aside class="sidebar" aria-label="Categorias">
     <div class="sidebar-profile">
-      <a class="brand sidebar-brand">memory.io</a>
+      <div class="sidebar-brand-row">
+        <a class="brand sidebar-brand">memory.io</a>
+        <button
+          class="sidebar-pin"
+          type="button"
+          [class.active]="sidebarPinned()"
+          [attr.aria-pressed]="sidebarPinned()"
+          [title]="sidebarPinned() ? 'Soltar menu' : 'Manter menu aberto'"
+          (click)="toggleSidebarPinned()"
+        >
+          <fa-icon [icon]="icons.thumbtack" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div class="sidebar-actions">
+        <button type="button" (click)="openCreateMemory()">
+          <fa-icon [icon]="icons.plus" aria-hidden="true" />
+          <span class="sidebar-text">Nova memoria</span>
+        </button>
+        <button type="button" (click)="openCreateCategory()">
+          <fa-icon [icon]="icons.plus" aria-hidden="true" />
+          <span class="sidebar-text">Nova pasta</span>
+        </button>
+      </div>
     </div>
 
     <button
@@ -121,7 +96,7 @@
           }
         </nav>
 
-        <h1>{{ currentCategory()?.label ?? 'Raiz' }}</h1>
+        <h1>{{ pageTitle() }}</h1>
         <p class="muted">{{ currentCategory()?.description ?? 'Categorias e memorias sem categoria.' }}</p>
       </div>
 
@@ -140,9 +115,61 @@
       <p class="form-error">{{ error() }}</p>
     }
 
+    @if (showRootDashboard()) {
+      <section class="dashboard-grid" aria-label="Resumo da biblioteca">
+        @for (stat of dashboardStats(); track stat.label) {
+          <article class="dashboard-card">
+            <div>
+              <span>{{ stat.label }}</span>
+              <strong>{{ stat.value }}</strong>
+            </div>
+            <span class="dashboard-icon" aria-hidden="true">
+              <fa-icon [icon]="stat.icon" />
+            </span>
+          </article>
+        }
+      </section>
+    }
+
+    <section class="search-panel" aria-label="Pesquisar memorias">
+      <div class="search-shell">
+        <mat-form-field class="search-box" appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Pesquisar notas, pastas, categorias...</mat-label>
+          <fa-icon matPrefix [icon]="icons.search" aria-hidden="true" />
+          <input
+            matInput
+            type="search"
+            [value]="memoryFilters().text ?? ''"
+            (input)="updateMemoryFilter('text', $any($event.target).value)"
+          >
+        </mat-form-field>
+
+        <button class="advanced-filter-button" type="button" title="Filtros avancados" (click)="openAdvancedFilters()">
+          <fa-icon [icon]="icons.sliders" aria-hidden="true" />
+        </button>
+
+        @if (hasMemoryFilters()) {
+          <button class="clear-filter-button" type="button" (click)="clearMemoryFilters()">Limpar</button>
+        }
+      </div>
+
+      <div class="quick-filters">
+      </div>
+    </section>
+
     <section class="library-grid">
       @for (category of visibleCategories(); track category.id) {
-        <article class="folder-card" role="button" tabindex="0" (click)="enterCategory(category)" (keyup.enter)="enterCategory(category)">
+        <article
+          class="folder-card"
+          role="button"
+          tabindex="0"
+          [class.drop-target]="dropCategoryId() === category.id"
+          (click)="enterCategory(category)"
+          (keyup.enter)="enterCategory(category)"
+          (dragover)="allowCategoryDrop(category, $event)"
+          (dragleave)="leaveDropTarget($event)"
+          (drop)="dropMemoryOnCategory(category, $event)"
+        >
           <div class="folder-icon {{ category.color ?? 'gray' }}"></div>
           <div>
             <h2>{{ category.label }}</h2>
@@ -151,15 +178,33 @@
               <span class="tag">Dentro de {{ parentName(category.parent_id) }}</span>
             }
           </div>
-          <div class="card-actions">
-            <button type="button" class="ghost-button compact" (click)="openEditCategory(category, $event)">Editar</button>
-            <button type="button" class="danger-button compact" (click)="removeCategory(category, $event)">Excluir</button>
-          </div>
+          <button
+            type="button"
+            class="card-delete-button"
+            title="Excluir categoria"
+            aria-label="Excluir categoria"
+            (click)="removeCategory(category, $event)"
+          >
+            <fa-icon [icon]="icons.trash" aria-hidden="true" />
+          </button>
         </article>
       }
 
       @for (memory of visibleMemories(); track memory.id) {
-        <article class="memory-card" role="button" tabindex="0" (click)="openEditMemory(memory)" (keyup.enter)="openEditMemory(memory)">
+        <article
+          class="memory-card"
+          role="button"
+          tabindex="0"
+          draggable="true"
+          [class.drop-target]="dropMemoryId() === memory.id"
+          (click)="openEditMemory(memory)"
+          (keyup.enter)="openEditMemory(memory)"
+          (dragstart)="startMemoryDrag(memory, $event)"
+          (dragend)="endMemoryDrag()"
+          (dragover)="allowMemoryDrop(memory, $event)"
+          (dragleave)="leaveDropTarget($event)"
+          (drop)="dropMemoryOnMemory(memory, $event)"
+        >
           <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
           <h2>{{ memory.title }}</h2>
           <div class="memory-content">
@@ -182,9 +227,27 @@
               <span class="tag">{{ memory.due_date | date:'dd/MM/yyyy HH:mm' }}</span>
             }
           </div>
-          <div class="card-actions">
-            <button type="button" class="ghost-button compact" (click)="openEditMemory(memory); $event.stopPropagation()">Editar</button>
-            <button type="button" class="danger-button compact" (click)="removeMemory(memory, $event)">Excluir</button>
+          <button
+            type="button"
+            class="card-delete-button"
+            title="Excluir memoria"
+            aria-label="Excluir memoria"
+            (click)="removeMemory(memory, $event)"
+          >
+            <fa-icon [icon]="icons.trash" aria-hidden="true" />
+          </button>
+        </article>
+      }
+
+      @if (!loading() && (visibleCategories().length > 0 || visibleMemories().length > 0)) {
+        <article class="insight-card">
+          <div>
+            <h2>Novo Insight</h2>
+            
+          </div>
+          <div class="insight-actions">
+            <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
+            <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
           </div>
         </article>
       }
@@ -224,6 +287,39 @@
       [saving]="saving()"
       (closeDialog)="closeDialog()"
       (saveMemory)="saveMemory($event)"
+    />
+  }
+
+  @if (deleteTarget(); as target) {
+    <app-confirm-dialog
+      [title]="target.type === 'category' ? 'Excluir categoria' : 'Excluir memoria'"
+      [message]="target.type === 'category'
+        ? 'Tem certeza que deseja excluir a categoria ' + target.item.label + '?'
+        : 'Tem certeza que deseja excluir a memoria ' + target.item.title + '?'"
+      confirmLabel="Excluir"
+      (cancel)="closeDeleteDialog()"
+      (confirm)="confirmDelete()"
+    />
+  }
+
+  @if (confirmTarget(); as target) {
+    <app-confirm-dialog
+      [title]="target.type === 'move-to-category' ? 'Associar nota' : 'Criar organizacao'"
+      [message]="target.type === 'move-to-category'
+        ? 'Deseja incluir a nota ' + target.memory.title + ' dentro da pasta?'
+        : 'Deseja criar uma nova categoria para essas notas?'"
+      confirmLabel="Sim"
+      cancelLabel="Nao"
+      (cancel)="closeConfirmDialog()"
+      (confirm)="confirmDragAction()"
+    />
+  }
+
+  @if (groupingPair()) {
+    <app-note-group-dialog
+      [saving]="saving()"
+      (closeDialog)="closeGroupDialog()"
+      (createGroup)="createGroupForMemories($event)"
     />
   }
 </main>

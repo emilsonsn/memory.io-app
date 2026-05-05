@@ -1,0 +1,18 @@
+<section class="dialog-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="title">
+  <div class="dialog-panel confirm-dialog">
+    <header class="dialog-header">
+      <div>
+        <h2>{{ title }}</h2>
+        <p class="muted">{{ message }}</p>
+      </div>
+      <button class="icon-button" type="button" [attr.aria-label]="cancelLabel" (click)="cancel.emit()">
+        <fa-icon [icon]="icons.close" aria-hidden="true" />
+      </button>
+    </header>
+
+    <div class="dialog-actions">
+      <button class="ghost-button" type="button" (click)="cancel.emit()">{{ cancelLabel }}</button>
+      <button class="danger-button" type="button" (click)="confirm.emit()">{{ confirmLabel }}</button>
+    </div>
+  </div>
+</section>
