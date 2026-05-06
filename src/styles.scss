@@ -1,14 +1,80 @@
-:root {
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
   --bg: #faf9ff;
   --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-panel: #f8f7fb;
+  --surface-note: #fffefa;
   --surface-soft: #f4f0ff;
+  --surface-input: #ffffff;
+  --surface-overlay: rgba(255, 255, 255, 0.82);
+  --topbar-bg: rgba(255, 255, 255, 0.86);
+  --sidebar-bg: rgba(255, 255, 255, 0.94);
   --line: #e8e2f4;
+  --line-strong: #cfc1ee;
   --text: #21172f;
+  --text-soft: #3b3149;
   --muted: #70657e;
+  --muted-soft: #93899e;
   --primary: #6d3bdc;
   --primary-strong: #5829c7;
+  --primary-soft: rgba(109, 59, 220, 0.08);
+  --primary-ring: rgba(109, 59, 220, 0.12);
+  --primary-focus: #9b7bed;
+  --on-primary: #ffffff;
   --danger: #c93f4a;
+  --danger-bg: #fff6f7;
+  --danger-line: #f3cdd2;
+  --warning: #d8b22d;
+  --tag-text: #59456f;
+  --backdrop: rgba(30, 20, 46, 0.28);
+  --dialog-backdrop: rgba(32, 33, 36, 0.38);
   --shadow: 0 18px 60px rgba(73, 43, 128, 0.12);
+  --shadow-soft: 0 10px 24px rgba(73, 43, 128, 0.06);
+  --shadow-card: 0 12px 30px rgba(73, 43, 128, 0.08);
+  --shadow-elevated: 0 18px 46px rgba(33, 23, 47, 0.16);
+  --brand-offset: #a990ef;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #111117;
+  --surface: #181720;
+  --surface-elevated: #201e2a;
+  --surface-panel: #1b1a24;
+  --surface-note: #211f19;
+  --surface-soft: #282338;
+  --surface-input: #171620;
+  --surface-overlay: rgba(32, 30, 42, 0.86);
+  --topbar-bg: rgba(17, 17, 23, 0.86);
+  --sidebar-bg: rgba(24, 23, 32, 0.94);
+  --line: #332d43;
+  --line-strong: #51466b;
+  --text: #f5f1ff;
+  --text-soft: #ddd4ea;
+  --muted: #b6abc7;
+  --muted-soft: #9f94af;
+  --primary: #a990ef;
+  --primary-strong: #c2b1ff;
+  --primary-soft: rgba(169, 144, 239, 0.14);
+  --primary-ring: rgba(169, 144, 239, 0.18);
+  --primary-focus: #bca7f8;
+  --on-primary: #181026;
+  --danger: #ff8a96;
+  --danger-bg: rgba(255, 138, 150, 0.12);
+  --danger-line: rgba(255, 138, 150, 0.28);
+  --warning: #f3cf55;
+  --tag-text: #d8c9f0;
+  --backdrop: rgba(4, 4, 8, 0.58);
+  --dialog-backdrop: rgba(4, 4, 8, 0.62);
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+  --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.22);
+  --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.24);
+  --shadow-elevated: 0 18px 46px rgba(0, 0, 0, 0.38);
+  --brand-offset: #6d3bdc;
 }
 
 * {
@@ -18,6 +84,10 @@
 html,
 body {
   min-height: 100%;
+}
+
+html {
+  background: var(--bg);
 }
 
 body {
@@ -82,7 +152,7 @@ h2 {
   margin-right: 9px;
   border-radius: 4px;
   background: var(--primary);
-  box-shadow: 5px 5px 0 #a990ef;
+  box-shadow: 5px 5px 0 var(--brand-offset);
 }
 
 .muted {
@@ -102,7 +172,7 @@ h2 {
 label {
   display: grid;
   gap: 7px;
-  color: #3b3149;
+  color: var(--text-soft);
   font-size: 0.9rem;
   font-weight: 650;
 }
@@ -114,7 +184,7 @@ textarea:not(.mat-mdc-input-element) {
   min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-input);
   color: var(--text);
   outline: none;
   padding: 10px 12px;
@@ -132,8 +202,8 @@ select[multiple] {
 input:not(.mat-mdc-input-element):focus,
 select:focus,
 textarea:not(.mat-mdc-input-element):focus {
-  border-color: #9b7bed;
-  box-shadow: 0 0 0 4px rgba(109, 59, 220, 0.12);
+  border-color: var(--primary-focus);
+  box-shadow: 0 0 0 4px var(--primary-ring);
 }
 
 .primary-button,
@@ -151,7 +221,7 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .primary-button {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .primary-button:hover:not(:disabled) {
@@ -160,18 +230,18 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .ghost-button {
   border-color: var(--line);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
 .ghost-button:hover {
-  border-color: #cfc1ee;
+  border-color: var(--line-strong);
   background: var(--surface-soft);
 }
 
 .danger-button {
-  border-color: #f3cdd2;
-  background: #fff6f7;
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
   color: var(--danger);
 }
 
@@ -184,8 +254,8 @@ textarea:not(.mat-mdc-input-element):focus {
   width: var(--sidebar-collapsed);
   overflow: hidden;
   border-right: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 10px 0 30px rgba(73, 43, 128, 0.08);
+  background: var(--sidebar-bg);
+  box-shadow: var(--shadow-card);
   padding: 14px 10px 16px;
   transition: width 0.2s ease;
 }
@@ -263,7 +333,7 @@ textarea:not(.mat-mdc-input-element):focus {
   margin: 0 4px 6px auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   opacity: 1;
 }
@@ -294,7 +364,7 @@ textarea:not(.mat-mdc-input-element):focus {
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   padding: 0 12px;
   font-size: 0.88rem;
@@ -302,7 +372,7 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .sidebar-actions button:hover {
-  border-color: #cfc1ee;
+  border-color: var(--line-strong);
   background: var(--surface-soft);
 }
 
@@ -374,7 +444,7 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .sidebar-expand-indicator:hover {
-  background: #fff;
+  background: var(--surface);
   color: var(--primary);
 }
 
@@ -393,20 +463,20 @@ textarea:not(.mat-mdc-input-element):focus {
   justify-content: center;
   border-radius: 6px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.72rem;
   font-weight: 800;
 }
 
 .sidebar-avatar {
   border-radius: 50%;
-  background: #ded9e8;
+  background: var(--surface-soft);
   color: var(--text);
 }
 
 .sidebar-color {
   border-radius: 50%;
-  background: #92909a;
+  background: var(--muted-soft);
 }
 
 .sidebar-user {
@@ -443,8 +513,8 @@ textarea:not(.mat-mdc-input-element):focus {
   padding: 18px 22px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f8f7fb;
-  box-shadow: 0 10px 24px rgba(73, 43, 128, 0.06);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-soft);
 }
 
 .dashboard-card span:not(.dashboard-icon) {
@@ -468,15 +538,15 @@ textarea:not(.mat-mdc-input-element):focus {
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: rgba(109, 59, 220, 0.08);
+  background: var(--primary-soft);
   color: var(--primary);
   font-size: 1.7rem;
 }
 
 .drop-target {
-  border-color: #cfc1ee !important;
+  border-color: var(--line-strong) !important;
   box-shadow: var(--shadow) !important;
-  outline: 3px solid rgba(109, 59, 220, 0.12);
+  outline: 3px solid var(--primary-ring);
 }
 
 .insight-card {
@@ -485,14 +555,14 @@ textarea:not(.mat-mdc-input-element):focus {
   align-content: center;
   min-height: 172px;
   padding: 18px;
-  border: 1px dashed #d8cef4;
+  border: 1px dashed var(--line-strong);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-overlay);
   text-align: center;
 }
 
 .insight-card h2 {
-  color: #5e5271;
+  color: var(--tag-text);
 }
 
 .insight-actions {
@@ -517,7 +587,7 @@ textarea:not(.mat-mdc-input-element):focus {
   height: 32px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-overlay);
   color: var(--muted);
 }
 
@@ -533,17 +603,17 @@ textarea:not(.mat-mdc-input-element):focus {
   height: 32px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #a5a0ad;
+  background: var(--surface-overlay);
+  color: var(--muted-soft);
 }
 
 .favorite-button:hover {
   border-color: var(--line);
-  background: #fff;
+  background: var(--surface);
 }
 
 .favorite-button.active {
-  color: #d8b22d;
+  color: var(--warning);
 }
 
 .favorite-button.loading,
@@ -565,7 +635,7 @@ textarea:not(.mat-mdc-input-element):focus {
 .card-settings-button:hover,
 .card-settings-button.active {
   border-color: var(--line);
-  background: #fff;
+  background: var(--surface);
   color: var(--primary);
 }
 
@@ -580,8 +650,8 @@ textarea:not(.mat-mdc-input-element):focus {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 18px 46px rgba(33, 23, 47, 0.16);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-elevated);
 }
 
 .quick-settings-menu > button {
@@ -613,7 +683,7 @@ textarea:not(.mat-mdc-input-element):focus {
 .color-swatch {
   width: 22px;
   height: 22px;
-  border: 2px solid #fff;
+  border: 2px solid var(--surface);
   border-radius: 50%;
   box-shadow: 0 0 0 1px var(--line);
 }
@@ -628,13 +698,13 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .note-editor .ql-toolbar {
-  border-color: #dadce0;
+  border-color: var(--line);
   border-radius: 8px 8px 0 0;
 }
 
 .note-editor .ql-container {
   min-height: 460px;
-  border-color: #dadce0;
+  border-color: var(--line);
   border-radius: 0 0 8px 8px;
   font-size: 1rem;
   line-height: 1.6;
@@ -653,7 +723,7 @@ textarea:not(.mat-mdc-input-element):focus {
   min-height: 48px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.64);
+  background: var(--surface-overlay);
   color: var(--text);
   padding: 0 12px;
   font-size: clamp(1.8rem, 4vw, 2.6rem);
@@ -665,8 +735,8 @@ textarea:not(.mat-mdc-input-element):focus {
 .expanded-title-form input:hover,
 .expanded-title-form input:focus {
   border-color: var(--line);
-  background: #fff;
-  box-shadow: 0 10px 24px rgba(73, 43, 128, 0.06);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .expanded-title-form span {
@@ -675,7 +745,7 @@ textarea:not(.mat-mdc-input-element):focus {
   padding: 0 9px;
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #59456f;
+  color: var(--tag-text);
   font-size: 0.78rem;
   font-weight: 700;
   line-height: 26px;
@@ -699,8 +769,8 @@ textarea:not(.mat-mdc-input-element):focus {
   min-height: calc(100vh - 220px);
   margin: 0 auto;
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 18px 60px rgba(73, 43, 128, 0.08);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 .workspace-note-editor .ql-toolbar {
@@ -709,7 +779,7 @@ textarea:not(.mat-mdc-input-element):focus {
   z-index: 8;
   border: 1px solid var(--line);
   border-radius: 8px 8px 0 0;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--sidebar-bg);
   backdrop-filter: blur(10px);
 }
 
@@ -780,6 +850,7 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .topbar-actions button:hover,
+.topbar-actions button[aria-pressed="true"],
 .advanced-filter-button:hover {
   border-color: var(--line);
   background: var(--surface-soft);
@@ -805,8 +876,8 @@ textarea:not(.mat-mdc-input-element):focus {
   width: 46px;
   height: 46px;
   border-color: var(--line);
-  background: #fff;
-  box-shadow: 0 10px 24px rgba(73, 43, 128, 0.06);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
   font-size: 1.1rem;
 }
 
@@ -814,7 +885,7 @@ textarea:not(.mat-mdc-input-element):focus {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   padding: 0 16px;
   font-weight: 720;
@@ -837,7 +908,7 @@ textarea:not(.mat-mdc-input-element):focus {
 .search-shell .mat-mdc-form-field {
   --mat-form-field-container-height: 42px;
   --mat-form-field-container-vertical-padding: 8px;
-  --mdc-filled-text-field-container-color: #fff;
+  --mdc-filled-text-field-container-color: var(--surface);
   --mdc-filled-text-field-focus-active-indicator-color: transparent;
   --mdc-filled-text-field-active-indicator-color: transparent;
   --mdc-filled-text-field-hover-active-indicator-color: transparent;
@@ -863,17 +934,17 @@ textarea:not(.mat-mdc-input-element):focus {
 .search-shell .mat-mdc-text-field-wrapper {
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(73, 43, 128, 0.06);
+  box-shadow: var(--shadow-soft);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .search-shell .mat-mdc-text-field-wrapper:hover {
-  border-color: #cfc1ee;
+  border-color: var(--line-strong);
 }
 
 .search-shell .mat-mdc-form-field:focus-within .mat-mdc-text-field-wrapper {
-  border-color: #9b7bed;
-  box-shadow: 0 0 0 4px rgba(109, 59, 220, 0.1), 0 12px 28px rgba(73, 43, 128, 0.08);
+  border-color: var(--primary-focus);
+  box-shadow: 0 0 0 4px var(--primary-ring), var(--shadow-card);
 }
 
 .search-shell .mdc-line-ripple {
@@ -915,19 +986,54 @@ textarea:not(.mat-mdc-input-element):focus {
 .memory-filter-select-panel {
   border: 1px solid var(--line);
   border-radius: 8px !important;
-  background: #fff !important;
-  box-shadow: 0 14px 34px rgba(33, 23, 47, 0.18);
+  background: var(--surface-elevated) !important;
+  box-shadow: var(--shadow-elevated);
   overflow: hidden !important;
 }
 
 .memory-filter-select-panel .mat-mdc-option {
-  background: #fff;
+  background: var(--surface-elevated);
   color: var(--text);
 }
 
 .memory-filter-select-panel .mat-mdc-option:hover,
 .memory-filter-select-panel .mat-mdc-option.mdc-list-item--selected {
   background: var(--surface-soft) !important;
+}
+
+.mat-mdc-dialog-surface {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.mat-mdc-dialog-title,
+.mat-mdc-dialog-content {
+  color: var(--text) !important;
+}
+
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel {
+  border: 1px solid var(--line);
+  background: var(--surface-elevated) !important;
+  color: var(--text);
+}
+
+.mat-mdc-option,
+.mat-mdc-select-value,
+.mat-mdc-select-arrow,
+.mat-mdc-form-field,
+.mat-mdc-input-element {
+  color: var(--text) !important;
+}
+
+.mat-mdc-option:hover,
+.mat-mdc-option.mdc-list-item--selected {
+  background: var(--surface-soft) !important;
+}
+
+.mat-mdc-form-field-label,
+.mat-mdc-floating-label {
+  color: var(--muted) !important;
 }
 
 .cdk-overlay-pane:has(.mat-datepicker-content) {
@@ -937,14 +1043,14 @@ textarea:not(.mat-mdc-input-element):focus {
 .mat-datepicker-content {
   border: 1px solid var(--line);
   border-radius: 8px !important;
-  background: #fff !important;
+  background: var(--surface-elevated) !important;
   color: var(--text);
-  box-shadow: 0 18px 46px rgba(33, 23, 47, 0.2) !important;
+  box-shadow: var(--shadow-elevated) !important;
   overflow: hidden;
 }
 
 .mat-datepicker-content .mat-calendar {
-  background: #fff !important;
+  background: var(--surface-elevated) !important;
 }
 
 .mat-datepicker-content .mat-calendar-body-cell-content,
@@ -957,7 +1063,7 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .mat-datepicker-content .mat-calendar-body-selected {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 @media (max-width: 720px) {
@@ -1020,10 +1126,10 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .form-error {
-  border: 1px solid #f0c5cb;
+  border: 1px solid var(--danger-line);
   border-radius: 8px;
-  background: #fff5f6;
-  color: #9f2634;
+  background: var(--danger-bg);
+  color: var(--danger);
   padding: 11px 12px;
   line-height: 1.45;
 }
@@ -1031,21 +1137,21 @@ textarea:not(.mat-mdc-input-element):focus {
 .compact-note-editor {
   display: block;
   overflow: hidden;
-  border: 1px solid #ece8f4;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .compact-note-editor .ql-toolbar {
   border: 0;
-  border-bottom: 1px solid #ece8f4;
+  border-bottom: 1px solid var(--line);
   padding: 6px 8px;
 }
 
 .compact-note-editor .ql-container {
   max-height: min(44vh, 420px);
   border: 0;
-  color: #202124;
+  color: var(--text);
   font-family: inherit;
   font-size: 1rem;
 }
@@ -1059,7 +1165,7 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .compact-note-editor .ql-editor.ql-blank::before {
-  color: #8a8297;
+  color: var(--muted-soft);
   font-style: normal;
 }
 
@@ -1069,6 +1175,29 @@ textarea:not(.mat-mdc-input-element):focus {
   object-fit: contain;
 }
 
+[data-theme="dark"] .compact-note-editor,
+[data-theme="dark"] .compact-note-editor .ql-container,
+[data-theme="dark"] .compact-note-editor .ql-editor {
+  background: #16141f;
+  color: var(--text);
+}
+
+[data-theme="dark"] .compact-note-editor .ql-toolbar {
+  background: #171520;
+}
+
+[data-theme="dark"] .compact-note-editor .ql-stroke {
+  stroke: var(--muted);
+}
+
+[data-theme="dark"] .compact-note-editor .ql-fill {
+  fill: var(--muted);
+}
+
+[data-theme="dark"] .compact-note-editor .ql-picker {
+  color: var(--muted);
+}
+
 .memory-preview img {
   display: block;
   width: min(100%, 156px);
@@ -1076,14 +1205,14 @@ textarea:not(.mat-mdc-input-element):focus {
   object-fit: contain;
   margin: 8px 0;
   border-radius: 8px;
-  border: 1px solid #eee8f8;
-  background: #fff;
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .folder-card.drop-before,
 .memory-card.drop-before,
 .memory-card.drop-after {
-  border-color: #8d66e8;
+  border-color: var(--primary);
 }
 
 .folder-card.drop-before::before,
@@ -1108,8 +1237,8 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .memory-card.drop-inside {
-  border-color: #c6b3f5;
-  box-shadow: 0 0 0 3px rgba(109, 59, 220, 0.1), var(--shadow);
+  border-color: var(--line-strong);
+  box-shadow: 0 0 0 3px var(--primary-ring), var(--shadow);
 }
 
 .category-box-icon {
@@ -1119,7 +1248,7 @@ textarea:not(.mat-mdc-input-element):focus {
   width: 48px;
   height: 42px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--on-primary);
   font-size: 1.45rem;
   box-shadow: inset 0 -10px 0 rgba(255, 255, 255, 0.16);
 }
@@ -1154,9 +1283,9 @@ textarea:not(.mat-mdc-input-element):focus {
   min-height: 118px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   padding: 16px;
-  box-shadow: 0 12px 30px rgba(73, 43, 128, 0.08);
+  box-shadow: var(--shadow-card);
 }
 
 .favorite-set-card h3 {

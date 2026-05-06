@@ -1,10 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <title>MemoryIA</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function () {
+      var storageKey = 'memoryia.theme';
+      var preference = 'system';
+
+      try {
+        preference = localStorage.getItem(storageKey) || 'system';
+      } catch (error) {
+        preference = 'system';
+      }
+
+      if (preference !== 'light' && preference !== 'dark' && preference !== 'system') {
+        preference = 'system';
+      }
+
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = preference === 'system' ? (prefersDark ? 'dark' : 'light') : preference;
+
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.themePreference = preference;
+      document.documentElement.style.colorScheme = theme;
+    })();
+  </script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>

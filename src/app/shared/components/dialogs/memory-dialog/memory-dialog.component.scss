@@ -1,7 +1,7 @@
 @use '../dialog';
 
 .dialog-backdrop {
-  background: rgba(32, 33, 36, 0.38);
+  background: var(--dialog-backdrop);
   backdrop-filter: none;
 }
 
@@ -10,10 +10,15 @@
   gap: 0;
   padding: 0;
   overflow: hidden;
-  border-color: #dadce0;
+  border-color: var(--line);
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(32, 33, 36, 0.28);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-elevated);
+}
+
+:host-context([data-theme="dark"]) .dialog-panel.note-dialog {
+  background: var(--surface-elevated);
 }
 
 .note-header {
@@ -33,7 +38,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #5f6368;
+  color: var(--muted);
 }
 
 .note-body {
@@ -48,7 +53,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: #202124;
+  color: var(--text);
   padding: 0;
   overflow-wrap: anywhere;
 }
@@ -65,19 +70,19 @@
   gap: 14px;
   margin: 0 16px 8px;
   padding: 14px 0 16px;
-  border-top: 1px solid #e8eaed;
+  border-top: 1px solid var(--line);
 }
 
 .advanced-options label,
 .field-label {
-  color: #3c4043;
+  color: var(--text-soft);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .advanced-options input {
-  border-color: #dadce0;
-  color: #202124;
+  border-color: var(--line);
+  color: var(--text);
 }
 
 .dialog-color-picker {
@@ -107,14 +112,14 @@
   justify-content: space-between;
   width: 100%;
   min-height: 44px;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-input);
   padding: 0 12px;
 }
 
 .category-select-trigger:focus {
-  border-color: #6d3bdc;
+  border-color: var(--primary);
   outline: none;
 }
 
@@ -125,9 +130,9 @@
 .category-select-panel {
   max-height: 190px;
   overflow: auto;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-elevated);
   padding: 6px;
 }
 
@@ -146,7 +151,7 @@
   width: 18px;
   height: 18px;
   min-height: 0;
-  accent-color: #6d3bdc;
+  accent-color: var(--primary);
   flex: 0 0 18px;
   margin: 0;
 }
@@ -161,15 +166,15 @@
   display: inline-flex;
   align-items: center;
   min-height: 30px;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #f8fafd;
+  background: var(--surface-soft);
   padding: 0 10px;
   font-size: 0.82rem;
 }
 
 .category-chip span + span {
-  color: #5f6368;
+  color: var(--muted);
   margin-left: 8px;
 }
 

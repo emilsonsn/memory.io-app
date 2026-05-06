@@ -8,7 +8,7 @@
   place-items: center;
   padding: 32px 18px;
   background:
-    linear-gradient(135deg, rgba(109, 59, 220, 0.12), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(135deg, var(--primary-ring), transparent 42%),
     var(--bg);
 }
 

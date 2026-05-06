@@ -27,7 +27,7 @@
   gap: 24px;
   padding: 14px 32px 14px calc(var(--content-offset) + 32px);
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--topbar-bg);
   backdrop-filter: blur(14px);
   transition: padding-left 0.2s ease;
 }
@@ -92,7 +92,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  box-shadow: 0 12px 30px rgba(73, 43, 128, 0.08);
+  box-shadow: var(--shadow-card);
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
@@ -103,13 +103,13 @@
 
 .memory-card {
   align-content: start;
-  background: #fffefa;
+  background: var(--surface-note);
   cursor: pointer;
 }
 
 .folder-card:hover,
 .memory-card:hover {
-  border-color: #cfc1ee;
+  border-color: var(--line-strong);
   box-shadow: var(--shadow);
   transform: translateY(-1px);
 }
@@ -144,7 +144,7 @@
 }
 
 .card-meta {
-  color: #93899e;
+  color: var(--muted-soft);
   font-size: 0.76rem;
   font-weight: 650;
   letter-spacing: 0;
@@ -153,7 +153,7 @@
 .card-meta span + span::before {
   content: '•';
   margin-right: 8px;
-  color: #c9c0d5;
+  color: var(--line-strong);
 }
 
 .copy-memory-button {
@@ -167,13 +167,13 @@
   height: 30px;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-overlay);
   color: var(--muted);
 }
 
 .copy-memory-button:hover {
   border-color: var(--line);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
@@ -193,8 +193,8 @@
 }
 
 .card-delete-button:hover {
-  border-color: #f3cdd2;
-  background: #fff6f7;
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
   color: var(--danger);
 }
 
@@ -202,7 +202,7 @@
   width: 54px;
   height: 38px;
   border-radius: 6px;
-  background: #ded9e8;
+  background: var(--surface-soft);
 }
 
 .folder-icon::before {
@@ -221,7 +221,7 @@
   width: 100%;
   height: 4px;
   border-radius: 999px;
-  background: #92909a;
+  background: var(--muted-soft);
 }
 
 .tag {
@@ -232,7 +232,7 @@
   padding: 0 9px;
   border-radius: 999px;
   background: var(--surface-soft);
-  color: #59456f;
+  color: var(--tag-text);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -244,10 +244,10 @@
 .state-message,
 .empty-state {
   padding: 18px;
-  border: 1px dashed #d8cef4;
+  border: 1px dashed var(--line-strong);
   border-radius: 8px;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-overlay);
 }
 
 .empty-state {

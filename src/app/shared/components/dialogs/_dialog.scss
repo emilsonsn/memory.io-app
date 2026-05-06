@@ -9,7 +9,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(30, 20, 46, 0.28);
+  background: var(--backdrop);
   backdrop-filter: blur(8px);
 }
 
@@ -23,7 +23,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  box-shadow: 0 24px 80px rgba(47, 27, 83, 0.24);
+  box-shadow: var(--shadow);
 }
 
 .dialog-panel.note-dialog {
@@ -47,7 +47,7 @@
   flex: 0 0 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   font-size: 1.3rem;
   line-height: 1;

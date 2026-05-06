@@ -18,11 +18,13 @@ import {
   faEllipsisVertical,
   faFolderOpen,
   faLayerGroup,
+  faMoon,
   faNoteSticky,
   faSliders,
   faPlus,
   faSpinner,
   faStar,
+  faSun,
   faUser,
   faSearch,
   faGear,
@@ -44,6 +46,7 @@ import { FavoritesApiService } from '../../core/api/favorites';
 import { MemoriesApiService, MemoryListFilters } from '../../core/api/memories/memories-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { AppLoadingService } from '../../core/loading/app-loading.service';
+import { ThemeService } from '../../core/theme/theme.service';
 import { CategoryDialogComponent } from '../../shared/components/dialogs/category-dialog/category-dialog.component';
 import { AdvancedMemoryFiltersDialogComponent } from '../../shared/components/dialogs/advanced-memory-filters-dialog/advanced-memory-filters-dialog.component';
 import { ConfirmDialogComponent } from '../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
@@ -122,6 +125,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
+  readonly themeService = inject(ThemeService);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -160,6 +164,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     folderOpen: faFolderOpen,
     gear: faGear,
     logout: faArrowRightFromBracket,
+    moon: faMoon,
     notification: faBell,
     note: faNoteSticky,
     plus: faPlus,
@@ -168,6 +173,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     sliders: faSliders,
     spinner: faSpinner,
     star: faStar,
+    sun: faSun,
     thumbtack: faThumbtack,
     trash: faTrashCan,
     close: faXmark,
