@@ -11,6 +11,8 @@ import {
   faArrowRightFromBracket,
   faBell,
   faBoxArchive,
+  faChevronDown,
+  faChevronRight,
   faClock,
   faCopy,
   faEllipsisVertical,
@@ -76,6 +78,13 @@ type MemoryFilterKey =
   | 'createdTo';
 type ReorderItem = Category | Memory;
 type DropIntent = 'before' | 'after' | 'inside';
+type SidebarCategoryNode = {
+  category: Category;
+  children: SidebarCategoryNode[];
+};
+type SidebarCategoryEntry =
+  | { kind: 'category'; category: Category; depth: number; hasChildren: boolean; expanded: boolean }
+  | { kind: 'toggle'; category: Category; depth: number; hiddenChildren: number; expanded: boolean };
 type FavoriteItem =
   | { type: 'category'; item: Category; favorite: Favorite }
   | { type: 'memory'; item: Memory; favorite: Favorite };
@@ -139,9 +148,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly dropCategoryId = signal<string | null>(null);
   readonly dropMemoryId = signal<string | null>(null);
   readonly dropMemoryIntent = signal<DropIntent>('inside');
+  readonly expandedSidebarCategoryIds = signal<string[]>([]);
+  readonly collapsedSidebarCategoryIds = signal<string[]>([]);
   readonly sidebarPinned = signal(true);
   readonly icons = {
     box: faBoxArchive,
+    chevronDown: faChevronDown,
+    chevronRight: faChevronRight,
     copy: faCopy,
     ellipsis: faEllipsisVertical,
     folderOpen: faFolderOpen,
@@ -264,8 +277,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     ];
   });
 
-  readonly sidebarCategories = computed(() => {
-    return [...this.categories()].sort((left, right) => this.categoryDisplay(left).localeCompare(this.categoryDisplay(right)));
+  readonly sidebarCategoryEntries = computed<SidebarCategoryEntry[]>(() => {
+    return this.buildSidebarEntries(this.sidebarCategoryTree());
   });
 
   readonly currentDefaultMemoryColor = computed<NoteColor | null>(() => {
@@ -282,6 +295,28 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   toggleSidebarPinned(): void {
     this.sidebarPinned.update((pinned) => !pinned);
+  }
+
+  selectSidebarCategory(category: Category, hasChildren: boolean, event: Event): void {
+    if (hasChildren) {
+      this.toggleSidebarCategory(category, event);
+      return;
+    }
+
+    this.goToCategory(category);
+  }
+
+  toggleSidebarCategory(category: Category, event: Event): void {
+    event.stopPropagation();
+
+    if (this.sidebarCategoryExpanded(category)) {
+      this.expandedSidebarCategoryIds.update((ids) => ids.filter((id) => id !== category.id));
+      this.collapsedSidebarCategoryIds.update((ids) => ids.includes(category.id) ? ids : [...ids, category.id]);
+      return;
+    }
+
+    this.collapsedSidebarCategoryIds.update((ids) => ids.filter((id) => id !== category.id));
+    this.expandedSidebarCategoryIds.update((ids) => ids.includes(category.id) ? ids : [...ids, category.id]);
   }
 
   loadData(): void {
@@ -915,6 +950,22 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return this.authStore.user()?.name?.trim().charAt(0).toUpperCase() || 'U';
   }
 
+  colorPreview(color: NoteColor | null): string {
+    const previews: Record<NoteColor | 'default', string> = {
+      default: '#92909a',
+      gray: '#92909a',
+      red: '#df5b68',
+      orange: '#df8b42',
+      yellow: '#d8b22d',
+      green: '#37a66b',
+      blue: '#4c7fd8',
+      purple: '#6d3bdc',
+      pink: '#dc66ad',
+    };
+
+    return previews[color ?? 'default'];
+  }
+
   filterDateValue(value: string | undefined): Date | null {
     if (!value) {
       return null;
@@ -1253,6 +1304,73 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return type === 'category'
       ? { category_id: id }
       : { memory_id: id };
+  }
+
+  private sidebarCategoryTree(): SidebarCategoryNode[] {
+    const nodes = new Map<string, SidebarCategoryNode>();
+
+    for (const category of this.categories()) {
+      nodes.set(category.id, { category, children: [] });
+    }
+
+    const roots: SidebarCategoryNode[] = [];
+
+    for (const node of nodes.values()) {
+      const parent = node.category.parent_id ? nodes.get(node.category.parent_id) : null;
+
+      if (parent) {
+        parent.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    const sortNodes = (items: SidebarCategoryNode[]): SidebarCategoryNode[] => {
+      return items
+        .sort((left, right) => left.category.label.localeCompare(right.category.label))
+        .map((node) => ({ ...node, children: sortNodes(node.children) }));
+    };
+
+    return sortNodes(roots);
+  }
+
+  private buildSidebarEntries(nodes: SidebarCategoryNode[], depth = 0): SidebarCategoryEntry[] {
+    return nodes.flatMap((node) => {
+      const expanded = this.sidebarCategoryExpanded(node.category, depth);
+      const entries: SidebarCategoryEntry[] = [{
+        kind: 'category',
+        category: node.category,
+        depth,
+        hasChildren: node.children.length > 0,
+        expanded,
+      }];
+
+      if (expanded) {
+        entries.push(...this.buildSidebarEntries(node.children, depth + 1));
+      } else if (node.children.length > 0 && depth > 0) {
+        entries.push({
+          kind: 'toggle',
+          category: node.category,
+          depth: depth + 1,
+          hiddenChildren: node.children.length,
+          expanded,
+        });
+      }
+
+      return entries;
+    });
+  }
+
+  private sidebarCategoryExpanded(category: Category, depth = 0): boolean {
+    if (this.collapsedSidebarCategoryIds().includes(category.id)) {
+      return false;
+    }
+
+    if (this.expandedSidebarCategoryIds().includes(category.id)) {
+      return true;
+    }
+
+    return this.breadcrumb().some((item) => item.parent_id === category.id);
   }
 
   private scheduleLoadMemories(): void {

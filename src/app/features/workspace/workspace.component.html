@@ -60,17 +60,39 @@
       <span class="sidebar-heading">Categoria</span>
 
       <div class="sidebar-list">
-        @for (category of sidebarCategories(); track category.id) {
-          <button
-            class="sidebar-item"
-            type="button"
-            [class.active]="currentCategoryId() === category.id"
-            (click)="goToCategory(category)"
-            [title]="categoryDisplay(category)"
-          >
-            <span class="sidebar-color {{ category.color ?? 'gray' }}" aria-hidden="true"></span>
-            <span class="sidebar-text">{{ categoryDisplay(category) }}</span>
-          </button>
+        @for (entry of sidebarCategoryEntries(); track entry.kind + entry.category.id + entry.depth) {
+          @if (entry.kind === 'category') {
+            <button
+              class="sidebar-item"
+              type="button"
+              [class.active]="currentCategoryId() === entry.category.id"
+              [style.padding-left.px]="10 + entry.depth * 16"
+              (click)="selectSidebarCategory(entry.category, entry.hasChildren, $event)"
+              [title]="entry.category.label"
+            >
+              <span class="sidebar-color {{ entry.category.color ?? 'gray' }}" aria-hidden="true"></span>
+              <span class="sidebar-text">{{ entry.category.label }}</span>
+              @if (entry.hasChildren) {
+                <span
+                  class="sidebar-expand-indicator"
+                  [title]="entry.expanded ? 'Ver menos' : 'Ver mais'"
+                  [attr.aria-label]="entry.expanded ? 'Recolher subcategorias' : 'Exibir subcategorias'"
+                >
+                  <fa-icon [icon]="entry.expanded ? icons.chevronDown : icons.chevronRight" aria-hidden="true" />
+                </span>
+              }
+            </button>
+          } @else {
+            <button
+              class="sidebar-more-item"
+              type="button"
+              [style.padding-left.px]="10 + entry.depth * 16"
+              (click)="toggleSidebarCategory(entry.category, $event)"
+            >
+              <span class="sidebar-text">Ver mais {{ entry.hiddenChildren }}</span>
+              <fa-icon [icon]="icons.chevronRight" aria-hidden="true" />
+            </button>
+          }
         }
       </div>
     </div>
@@ -315,6 +337,7 @@
                 <button
                   type="button"
                   class="color-swatch gray"
+                  [style.background]="colorPreview(null)"
                   title="Padrao"
                   aria-label="Usar cor padrao"
                   [class.selected]="!category.color"
@@ -324,6 +347,7 @@
                   <button
                     type="button"
                     class="color-swatch {{ color.value }}"
+                    [style.background]="colorPreview(color.value)"
                     [title]="color.label"
                     [attr.aria-label]="'Alterar cor para ' + color.label"
                     [class.selected]="category.color === color.value"
@@ -417,6 +441,7 @@
                 <button
                   type="button"
                   class="color-swatch gray"
+                  [style.background]="colorPreview(null)"
                   title="Padrao"
                   aria-label="Usar cor padrao"
                   [class.selected]="!memory.color"
@@ -426,6 +451,7 @@
                   <button
                     type="button"
                     class="color-swatch {{ color.value }}"
+                    [style.background]="colorPreview(color.value)"
                     [title]="color.label"
                     [attr.aria-label]="'Alterar cor para ' + color.label"
                     [class.selected]="memory.color === color.value"
