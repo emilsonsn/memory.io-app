@@ -145,8 +145,25 @@
           </nav>
 
           @if (currentCategory()) {
-            <h1>{{ pageTitle() }}</h1>
-            <p class="muted">{{ currentCategory()?.description }}</p>
+            <div class="category-header-editor">
+              <input
+                class="category-title-input"
+                type="text"
+                [value]="currentCategory()?.label"
+                aria-label="Editar titulo da pasta ou categoria"
+                placeholder="Titulo"
+                (blur)="saveCurrentCategoryTitle($event)"
+                (keydown.enter)="$any($event.target).blur()"
+              >
+              <textarea
+                class="category-description-input"
+                [value]="currentCategory()?.description"
+                aria-label="Editar descricao da pasta ou categoria"
+                placeholder="Adicionar descricao"
+                rows="2"
+                (blur)="saveCurrentCategoryDescription($event)"
+              ></textarea>
+            </div>
           }
         }
       </div>

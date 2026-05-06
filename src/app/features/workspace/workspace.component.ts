@@ -458,6 +458,69 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  saveCurrentCategoryTitle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const category = this.currentCategory();
+    const label = input.value.trim();
+
+    if (!category) {
+      return;
+    }
+
+    if (!label) {
+      input.value = category.label;
+      return;
+    }
+
+    if (label === category.label) {
+      return;
+    }
+
+    this.updateCurrentCategory(category, { label }, () => {
+      input.value = category.label;
+    });
+  }
+
+  saveCurrentCategoryDescription(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    const category = this.currentCategory();
+    const description = textarea.value.trim();
+
+    if (!category || description === category.description) {
+      return;
+    }
+
+    this.updateCurrentCategory(category, { description }, () => {
+      textarea.value = category.description;
+    });
+  }
+
+  private updateCurrentCategory(category: Category, changes: Partial<CategoryPayload>, rollback: () => void): void {
+    if (this.saving()) {
+      rollback();
+      return;
+    }
+
+    this.saving.set(true);
+    this.error.set(null);
+
+    this.categoriesApi.update(category.id, {
+      label: changes.label ?? category.label,
+      description: changes.description ?? category.description,
+      color: changes.color ?? category.color,
+      parent_id: changes.parent_id ?? category.parent_id,
+    }).subscribe({
+      next: (updatedCategory) => {
+        this.categories.update((categories) => categories.map((item) => item.id === updatedCategory.id ? updatedCategory : item));
+      },
+      error: (error: HttpErrorResponse) => {
+        rollback();
+        this.error.set(this.extractError(error));
+      },
+      complete: () => this.saving.set(false),
+    });
+  }
+
   updateMemoryColor(memory: Memory, color: NoteColor | null, event: Event): void {
     event.stopPropagation();
 
