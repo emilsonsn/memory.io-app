@@ -172,22 +172,6 @@
       <p class="form-error">{{ error() }}</p>
     }
 
-    @if (!expandedMemory() && showRootDashboard()) {
-      <section class="dashboard-grid" aria-label="Resumo da biblioteca">
-        @for (stat of dashboardStats(); track stat.label) {
-          <article class="dashboard-card">
-            <div>
-              <span>{{ stat.label }}</span>
-              <strong>{{ stat.value }}</strong>
-            </div>
-            <span class="dashboard-icon" aria-hidden="true">
-              <fa-icon [icon]="stat.icon" />
-            </span>
-          </article>
-        }
-      </section>
-    }
-
     @if (!expandedMemory()) {
     <section class="search-panel" aria-label="Pesquisar memorias">
       <div class="search-shell">
@@ -293,7 +277,7 @@
       </section>
 
       <div class="library-section-title">
-        <h2 id="general-title">Geral</h2>
+        <h2 id="general-title">Geral <span class="section-count">({{ generalItemsTotal() }})</span></h2>
       </div>
     }
 

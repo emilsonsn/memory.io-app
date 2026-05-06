@@ -1270,6 +1270,12 @@ textarea:not(.mat-mdc-input-element):focus {
   font-weight: 780;
 }
 
+.section-count {
+  color: var(--muted);
+  font-size: 0.88em;
+  font-weight: 650;
+}
+
 .section-empty {
   color: var(--muted);
   font-size: 0.92rem;

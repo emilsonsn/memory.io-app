@@ -13,11 +13,9 @@ import {
   faBoxArchive,
   faChevronDown,
   faChevronRight,
-  faClock,
   faCopy,
   faEllipsisVertical,
   faFolderOpen,
-  faLayerGroup,
   faMoon,
   faNoteSticky,
   faSliders,
@@ -246,8 +244,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   });
 
-  readonly showRootDashboard = computed(() => !this.currentCategoryId() && !this.hasMemoryFilters());
-
   readonly pageTitle = computed(() => {
     if (this.currentCategory()) {
       return this.currentCategory()?.label;
@@ -256,32 +252,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return 'Seu Second Brain';
   });
 
-  readonly dashboardStats = computed(() => {
-    const categories = this.categories();
-    const memories = this.allMemories();
-
-    return [
-      {
-        label: 'Total de Notas',
-        value: memories.length,
-        icon: faNoteSticky,
-      },
-      {
-        label: 'Pastas',
-        value: categories.filter((category) => !category.parent_id).length,
-        icon: faFolderOpen,
-      },
-      {
-        label: 'Categorias',
-        value: categories.filter((category) => category.parent_id).length,
-        icon: faLayerGroup,
-      },
-      {
-        label: 'A Vencer',
-        value: memories.filter((memory) => this.isUpcoming(memory)).length,
-        icon: faClock,
-      },
-    ];
+  readonly generalItemsTotal = computed(() => {
+    return this.visibleCategories().length + this.visibleMemories().length;
   });
 
   readonly sidebarCategoryEntries = computed<SidebarCategoryEntry[]>(() => {
