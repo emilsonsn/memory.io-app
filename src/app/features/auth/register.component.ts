@@ -4,6 +4,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { UsersApiService } from '../../core/api/users/users-api.service';
+import { ThemeService } from '../../core/theme/theme.service';
 
 @Component({
   selector: 'app-register',
@@ -16,6 +17,7 @@ export class RegisterComponent {
   private readonly usersApi = inject(UsersApiService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  readonly themeService = inject(ThemeService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);

@@ -1,7 +1,10 @@
 <main class="auth-shell">
   <section class="auth-panel">
     <a class="auth-logo" routerLink="/login" aria-label="MemoryIA">
-      <img src="/logos/memoryia_horizontal.png" alt="MemoryIA">
+      <img
+        [src]="themeService.isDark() ? '/assets/memoryia_horizontal_white.png' : '/logos/memoryia_horizontal.png'"
+        alt="MemoryIA"
+      >
     </a>
     <h1>Criar usuario</h1>
     <p class="muted">Comece com uma conta simples e organize suas memorias.</p>

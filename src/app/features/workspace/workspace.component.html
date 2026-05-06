@@ -29,7 +29,10 @@
     <div class="sidebar-profile">
       <div class="sidebar-brand-row">
         <a class="sidebar-brand" aria-label="MemoryIA" (click)="goToRoot()">
-          <img src="/logos/memoryia_horizontal.png" alt="MemoryIA" />
+          <img
+            [src]="themeService.isDark() ? '/assets/memoryia_horizontal_white.png' : '/logos/memoryia_horizontal.png'"
+            alt="MemoryIA"
+          />
         </a>
         <button
           class="sidebar-pin"

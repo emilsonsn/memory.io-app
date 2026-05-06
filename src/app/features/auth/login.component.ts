@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthApiService } from '../../core/api/auth/auth-api.service';
 import { AuthStore } from '../../core/auth/auth.store';
+import { ThemeService } from '../../core/theme/theme.service';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ export class LoginComponent {
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  readonly themeService = inject(ThemeService);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
