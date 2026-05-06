@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { AppLoadingService } from './core/loading/app-loading.service';
+import { ThemeService } from './core/theme/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +14,7 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   readonly loadingService = inject(AppLoadingService);
+  private readonly themeService = inject(ThemeService);
 
   title = 'MemoryIA';
 

@@ -3,6 +3,16 @@
     <div class="topbar-spacer"></div>
 
     <div class="topbar-actions" aria-label="Acoes globais">
+      <button
+        type="button"
+        class="theme-toggle"
+        [title]="themeService.isDark() ? 'Ativar modo claro' : 'Ativar modo escuro'"
+        [attr.aria-label]="themeService.isDark() ? 'Ativar modo claro' : 'Ativar modo escuro'"
+        [attr.aria-pressed]="themeService.isDark()"
+        (click)="themeService.toggleTheme()"
+      >
+        <fa-icon [icon]="themeService.isDark() ? icons.sun : icons.moon" aria-hidden="true" />
+      </button>
       <button type="button" title="Configuracoes">
         <fa-icon [icon]="icons.gear" aria-hidden="true" />
       </button>

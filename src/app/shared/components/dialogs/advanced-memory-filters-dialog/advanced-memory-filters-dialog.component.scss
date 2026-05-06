@@ -52,7 +52,7 @@ mat-dialog-content {
 .advanced-filter-form .mat-mdc-form-field {
   --mat-form-field-container-height: 48px;
   --mat-form-field-container-vertical-padding: 10px;
-  --mdc-filled-text-field-container-color: #f5f3fa;
+  --mdc-filled-text-field-container-color: var(--surface-soft);
   --mdc-filled-text-field-focus-active-indicator-color: transparent;
   --mdc-filled-text-field-active-indicator-color: transparent;
   --mdc-filled-text-field-hover-active-indicator-color: transparent;

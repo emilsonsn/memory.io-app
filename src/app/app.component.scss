@@ -14,7 +14,7 @@
   z-index: 3000;
   display: grid;
   place-items: center;
-  background: rgba(253, 252, 255, 0.74);
+  background: var(--surface-overlay);
   backdrop-filter: blur(8px);
 }
 
@@ -26,16 +26,16 @@
   padding: 0 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
-  box-shadow: 0 16px 42px rgba(73, 43, 128, 0.1);
+  box-shadow: var(--shadow-card);
   font-weight: 720;
 }
 
 .app-loading-mark {
   width: 18px;
   height: 18px;
-  border: 3px solid rgba(109, 59, 220, 0.18);
+  border: 3px solid var(--primary-ring);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: app-loading-spin 0.75s linear infinite;

@@ -145,6 +145,7 @@ export class MemoryDialogComponent implements OnChanges {
 
   expandNote(): void {
     if (this.form.invalid) {
+      this.toastr.warning('Preencha os campos obrigatórios para expandir a memória.');
       return;
     }
 

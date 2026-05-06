@@ -2,8 +2,8 @@
 
 .auth-shell {
   background:
-    radial-gradient(circle at top left, rgba(109, 59, 220, 0.06), transparent 34%),
-    #fdfcff;
+    radial-gradient(circle at top left, var(--primary-soft), transparent 34%),
+    var(--bg);
 }
 
 .auth-panel {
