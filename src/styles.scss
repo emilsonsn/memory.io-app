@@ -329,6 +329,7 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .sidebar-root,
 .sidebar-item,
+.sidebar-more-item,
 .sidebar-user,
 .sidebar-logout {
   display: flex;
@@ -345,10 +346,36 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .sidebar-root:hover,
 .sidebar-item:hover,
+.sidebar-more-item:hover,
 .sidebar-logout:hover,
 .sidebar-root.active,
 .sidebar-item.active {
   background: var(--surface-soft);
+}
+
+.sidebar-more-item {
+  min-height: 30px;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.sidebar-expand-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.sidebar-expand-indicator:hover {
+  background: #fff;
+  color: var(--primary);
 }
 
 .sidebar-icon,
@@ -960,7 +987,8 @@ textarea:not(.mat-mdc-input-element):focus {
   }
 
   .sidebar-root,
-  .sidebar-item {
+  .sidebar-item,
+  .sidebar-more-item {
     width: auto;
     flex: 0 0 auto;
   }
