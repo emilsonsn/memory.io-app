@@ -155,6 +155,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly expandedSidebarCategoryIds = signal<string[]>([]);
   readonly collapsedSidebarCategoryIds = signal<string[]>([]);
   readonly sidebarPinned = signal(true);
+  private readonly expandMemoryAfterSave = signal(false);
   readonly icons = {
     box: faBoxArchive,
     chevronDown: faChevronDown,
@@ -387,11 +388,14 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     }
 
     if (this.saving()) {
+      this.expandMemoryAfterSave.set(true);
       return;
     }
 
+    const finalPayload = this.memoryPayloadWithCurrentCategory(payload);
+
     this.saving.set(true);
-    this.memoriesApi.create(payload).subscribe({
+    this.memoriesApi.create(finalPayload).subscribe({
       next: (memory) => {
         this.toastr.success('Memoria criada com sucesso.');
         this.closeAfterSave();
@@ -399,7 +403,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         this.loadMemories();
         this.loadDashboardMemories();
       },
-      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      error: (error: HttpErrorResponse) => {
+        this.expandMemoryAfterSave.set(false);
+        this.error.set(this.extractError(error));
+      },
       complete: () => this.saving.set(false),
     });
   }
@@ -467,7 +474,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         this.categories.update((categories) => categories.map((item) => item.id === updatedCategory.id ? updatedCategory : item));
         this.toastr.success('Cor atualizada com sucesso.');
       },
-      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+      error: (error: HttpErrorResponse) => {
+        this.expandMemoryAfterSave.set(false);
+        this.error.set(this.extractError(error));
+      },
       complete: () => this.saving.set(false),
     });
   }
@@ -502,6 +512,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.expandMemoryAfterSave.set(false);
     this.activeDialog.set(null);
     this.editingCategory.set(null);
     this.editingMemory.set(null);
@@ -633,10 +644,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const currentCategoryId = this.currentCategoryId();
-    const finalPayload = this.editingMemory() || !currentCategoryId
-      ? payload
-      : { ...payload, category_ids: Array.from(new Set([...payload.category_ids, currentCategoryId])) };
+    const finalPayload = this.memoryPayloadWithCurrentCategory(payload);
 
     this.saving.set(true);
     this.error.set(null);
@@ -647,10 +655,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
     request.subscribe({
       next: (memory) => {
-        this.editingMemory.set(memory);
-        this.toastr.success(editing ? 'Memoria salva automaticamente.' : 'Memoria criada com sucesso.');
+        this.editingMemory.set(memory);        
         this.loadMemories();
         this.loadDashboardMemories();
+
+        if (this.expandMemoryAfterSave()) {
+          this.expandMemoryAfterSave.set(false);
+          this.closeAfterSave();
+          this.openExpandedMemory(memory);
+        }
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
       complete: () => this.saving.set(false),
@@ -1076,6 +1089,14 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   private expandedSnapshot(): string {
     return JSON.stringify(this.expandedNoteForm.getRawValue());
+  }
+
+  private memoryPayloadWithCurrentCategory(payload: MemoryPayload): MemoryPayload {
+    const currentCategoryId = this.currentCategoryId();
+
+    return this.editingMemory() || !currentCategoryId
+      ? payload
+      : { ...payload, category_ids: Array.from(new Set([...payload.category_ids, currentCategoryId])) };
   }
 
   private memoryFromPayload(memory: Memory, payload: MemoryPayload): Memory {
