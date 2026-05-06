@@ -277,9 +277,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   selectSidebarCategory(category: Category, hasChildren: boolean, event: Event): void {
+    event.stopPropagation();
+
     if (hasChildren) {
-      this.toggleSidebarCategory(category, event);
-      return;
+      this.toggleSidebarCategoryState(category);
     }
 
     this.goToCategory(category);
@@ -287,7 +288,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   toggleSidebarCategory(category: Category, event: Event): void {
     event.stopPropagation();
+    this.toggleSidebarCategoryState(category);
+  }
 
+  private toggleSidebarCategoryState(category: Category): void {
     if (this.sidebarCategoryExpanded(category)) {
       this.expandedSidebarCategoryIds.update((ids) => ids.filter((id) => id !== category.id));
       this.collapsedSidebarCategoryIds.update((ids) => ids.includes(category.id) ? ids : [...ids, category.id]);
