@@ -49,11 +49,12 @@
 
 .note-title {
   min-height: 0;
-  border: 0;
+  border: 0 !important;
   border-radius: 0;
   background: transparent;
-  box-shadow: none;
+  box-shadow: none !important;
   color: var(--text);
+  outline: 0 !important;
   padding: 0;
   overflow-wrap: anywhere;
 }
