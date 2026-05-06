@@ -14,7 +14,7 @@ export class AppComponent {
   private readonly destroyRef = inject(DestroyRef);
   readonly loadingService = inject(AppLoadingService);
 
-  title = 'memory.io-app';
+  title = 'MemoryIA';
 
   constructor() {
     this.router.events

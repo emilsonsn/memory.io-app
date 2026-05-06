@@ -237,14 +237,21 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .sidebar-brand {
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
-  margin: 0 10px 6px;
+  max-width: 166px;
+  margin: 0 8px 6px;
   white-space: nowrap;
   opacity: 0;
+  cursor: pointer;
 }
 
-.sidebar-brand::before {
-  flex: 0 0 14px;
+.sidebar-brand img {
+  display: block;
+  width: 154px;
+  max-width: 100%;
+  height: auto;
 }
 
 .sidebar-pin {
