@@ -13,11 +13,9 @@ import {
   faBoxArchive,
   faChevronDown,
   faChevronRight,
-  faClock,
   faCopy,
   faEllipsisVertical,
   faFolderOpen,
-  faLayerGroup,
   faMoon,
   faNoteSticky,
   faSliders,
@@ -246,8 +244,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   });
 
-  readonly showRootDashboard = computed(() => !this.currentCategoryId() && !this.hasMemoryFilters());
-
   readonly pageTitle = computed(() => {
     if (this.currentCategory()) {
       return this.currentCategory()?.label;
@@ -256,32 +252,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return 'Seu Second Brain';
   });
 
-  readonly dashboardStats = computed(() => {
-    const categories = this.categories();
-    const memories = this.allMemories();
-
-    return [
-      {
-        label: 'Total de Notas',
-        value: memories.length,
-        icon: faNoteSticky,
-      },
-      {
-        label: 'Pastas',
-        value: categories.filter((category) => !category.parent_id).length,
-        icon: faFolderOpen,
-      },
-      {
-        label: 'Categorias',
-        value: categories.filter((category) => category.parent_id).length,
-        icon: faLayerGroup,
-      },
-      {
-        label: 'A Vencer',
-        value: memories.filter((memory) => this.isUpcoming(memory)).length,
-        icon: faClock,
-      },
-    ];
+  readonly generalItemsTotal = computed(() => {
+    return this.visibleCategories().length + this.visibleMemories().length;
   });
 
   readonly sidebarCategoryEntries = computed<SidebarCategoryEntry[]>(() => {
@@ -305,9 +277,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   selectSidebarCategory(category: Category, hasChildren: boolean, event: Event): void {
+    event.stopPropagation();
+
     if (hasChildren) {
-      this.toggleSidebarCategory(category, event);
-      return;
+      this.toggleSidebarCategoryState(category);
     }
 
     this.goToCategory(category);
@@ -315,7 +288,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   toggleSidebarCategory(category: Category, event: Event): void {
     event.stopPropagation();
+    this.toggleSidebarCategoryState(category);
+  }
 
+  private toggleSidebarCategoryState(category: Category): void {
     if (this.sidebarCategoryExpanded(category)) {
       this.expandedSidebarCategoryIds.update((ids) => ids.filter((id) => id !== category.id));
       this.collapsedSidebarCategoryIds.update((ids) => ids.includes(category.id) ? ids : [...ids, category.id]);
@@ -476,6 +452,69 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       },
       error: (error: HttpErrorResponse) => {
         this.expandMemoryAfterSave.set(false);
+        this.error.set(this.extractError(error));
+      },
+      complete: () => this.saving.set(false),
+    });
+  }
+
+  saveCurrentCategoryTitle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const category = this.currentCategory();
+    const label = input.value.trim();
+
+    if (!category) {
+      return;
+    }
+
+    if (!label) {
+      input.value = category.label;
+      return;
+    }
+
+    if (label === category.label) {
+      return;
+    }
+
+    this.updateCurrentCategory(category, { label }, () => {
+      input.value = category.label;
+    });
+  }
+
+  saveCurrentCategoryDescription(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    const category = this.currentCategory();
+    const description = textarea.value.trim();
+
+    if (!category || description === category.description) {
+      return;
+    }
+
+    this.updateCurrentCategory(category, { description }, () => {
+      textarea.value = category.description;
+    });
+  }
+
+  private updateCurrentCategory(category: Category, changes: Partial<CategoryPayload>, rollback: () => void): void {
+    if (this.saving()) {
+      rollback();
+      return;
+    }
+
+    this.saving.set(true);
+    this.error.set(null);
+
+    this.categoriesApi.update(category.id, {
+      label: changes.label ?? category.label,
+      description: changes.description ?? category.description,
+      color: changes.color ?? category.color,
+      parent_id: changes.parent_id ?? category.parent_id,
+    }).subscribe({
+      next: (updatedCategory) => {
+        this.categories.update((categories) => categories.map((item) => item.id === updatedCategory.id ? updatedCategory : item));
+      },
+      error: (error: HttpErrorResponse) => {
+        rollback();
         this.error.set(this.extractError(error));
       },
       complete: () => this.saving.set(false),
