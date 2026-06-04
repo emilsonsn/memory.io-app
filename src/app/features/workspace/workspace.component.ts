@@ -77,8 +77,6 @@ type MemoryFilterKey =
   | 'color'
   | 'createdFrom'
   | 'createdTo';
-type ReorderItem = Category | Memory;
-type DropIntent = 'before' | 'after' | 'inside';
 type SidebarCategoryNode = {
   category: Category;
   children: SidebarCategoryNode[];
@@ -146,10 +144,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly quickSettingsTarget = signal<QuickSettingsTarget | null>(null);
   readonly groupingPair = signal<{ source: Memory; target: Memory } | null>(null);
   readonly draggedMemory = signal<Memory | null>(null);
-  readonly draggedCategory = signal<Category | null>(null);
   readonly dropCategoryId = signal<string | null>(null);
   readonly dropMemoryId = signal<string | null>(null);
-  readonly dropMemoryIntent = signal<DropIntent>('inside');
   readonly expandedSidebarCategoryIds = signal<string[]>([]);
   readonly collapsedSidebarCategoryIds = signal<string[]>([]);
   readonly sidebarPinned = signal(true);
@@ -209,23 +205,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   readonly visibleCategories = computed(() => {
     if (this.hasMemoryFilters()) {
-      return this.applyStoredOrder(
-        [...this.filteredCategories()].sort((left, right) => left.label.localeCompare(right.label)),
-        this.categoryOrderKey('filtered'),
-      );
+      return this.filteredCategories();
     }
 
     const parentId = this.currentCategoryId();
 
-    const categories = this.categories()
-      .filter((category) => category.parent_id === parentId)
-      .sort((left, right) => left.label.localeCompare(right.label));
-
-    return this.applyStoredOrder(categories, this.categoryOrderKey(parentId));
+    return this.categories().filter((category) => category.parent_id === parentId);
   });
 
   readonly visibleMemories = computed(() => {
-    return this.applyStoredOrder(this.memories(), this.memoryOrderKey());
+    return this.memories();
   });
 
   readonly hasRootSections = computed(() => {
@@ -649,7 +638,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       || filters.dueFrom
       || filters.dueTo
       || filters.sortBy !== 'created_at'
-      || filters.sortDirection !== 'desc',
+      || filters.sortDirection !== 'desc'
     );
   }
 
@@ -721,35 +710,20 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   startMemoryDrag(memory: Memory, event: DragEvent): void {
     this.draggedMemory.set(memory);
-    this.draggedCategory.set(null);
     event.dataTransfer?.setData('text/plain', memory.id);
-    event.dataTransfer?.setDragImage(event.currentTarget as Element, 20, 20);
-  }
-
-  startCategoryDrag(category: Category, event: DragEvent): void {
-    this.draggedCategory.set(category);
-    this.draggedMemory.set(null);
-    event.dataTransfer?.setData('text/plain', category.id);
     event.dataTransfer?.setDragImage(event.currentTarget as Element, 20, 20);
   }
 
   endItemDrag(): void {
     this.draggedMemory.set(null);
-    this.draggedCategory.set(null);
     this.dropCategoryId.set(null);
     this.dropMemoryId.set(null);
-    this.dropMemoryIntent.set('inside');
   }
 
   allowCategoryDrop(category: Category, event: DragEvent): void {
     const draggedMemory = this.draggedMemory();
-    const draggedCategory = this.draggedCategory();
 
-    if (!draggedMemory && !draggedCategory) {
-      return;
-    }
-
-    if (draggedCategory && draggedCategory.id === category.id) {
+    if (!draggedMemory) {
       return;
     }
 
@@ -766,7 +740,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
     event.preventDefault();
     this.dropMemoryId.set(memory.id);
-    this.dropMemoryIntent.set(this.resolveDropIntent(event));
   }
 
   leaveDropTarget(event: DragEvent): void {
@@ -794,21 +767,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.confirmTarget.set({ type: 'move-to-category', memory, category });
   }
 
-  dropOnCategory(category: Category, event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const draggedCategory = this.draggedCategory();
-
-    if (draggedCategory) {
-      this.reorderCategories(draggedCategory, category);
-      this.endItemDrag();
-      return;
-    }
-
-    this.dropMemoryOnCategory(category, event);
-  }
-
   dropMemoryOnMemory(target: Memory, event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -819,41 +777,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const intent = this.resolveDropIntent(event);
-
-    if (intent === 'inside') {
-      this.confirmTarget.set({ type: 'group-memories', source, target });
-      return;
-    }
-
-    this.reorderMemories(source, target, intent);
-  }
-
-  private reorderCategories(source: Category, target: Category): void {
-    const visibleCategories = this.visibleCategories();
-
-    if (!visibleCategories.some((category) => category.id === source.id) || !visibleCategories.some((category) => category.id === target.id)) {
-      return;
-    }
-
-    const reordered = this.moveItemBefore(visibleCategories, source.id, target.id);
-    this.saveStoredOrder(this.categoryOrderKey(this.hasMemoryFilters() ? 'filtered' : this.currentCategoryId()), reordered);
-    this.categories.update((categories) => this.mergeOrderedItems(categories, reordered));
-    this.filteredCategories.update((categories) => this.mergeOrderedItems(categories, reordered));
-  }
-
-  private reorderMemories(source: Memory, target: Memory, intent: Exclude<DropIntent, 'inside'>): void {
-    const visibleMemories = this.visibleMemories();
-
-    if (!visibleMemories.some((memory) => memory.id === source.id) || !visibleMemories.some((memory) => memory.id === target.id)) {
-      return;
-    }
-
-    const reordered = intent === 'before'
-      ? this.moveItemBefore(visibleMemories, source.id, target.id)
-      : this.moveItemAfter(visibleMemories, source.id, target.id);
-    this.saveStoredOrder(this.memoryOrderKey(), reordered);
-    this.memories.set(reordered);
+    this.confirmTarget.set({ type: 'group-memories', source, target });
   }
 
   closeConfirmDialog(): void {
@@ -1247,116 +1171,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     };
   }
 
-  private applyStoredOrder<T extends ReorderItem>(items: T[], key: string): T[] {
-    const storedIds = this.readStoredOrder(key);
-
-    if (!storedIds.length) {
-      return items;
-    }
-
-    const orderMap = new Map(storedIds.map((id, index) => [id, index]));
-
-    return [...items].sort((left, right) => {
-      const leftIndex = orderMap.get(left.id) ?? Number.MAX_SAFE_INTEGER;
-      const rightIndex = orderMap.get(right.id) ?? Number.MAX_SAFE_INTEGER;
-
-      return leftIndex - rightIndex;
-    });
-  }
-
-  private moveItemBefore<T extends ReorderItem>(items: T[], sourceId: string, targetId: string): T[] {
-    const nextItems = [...items];
-    const sourceIndex = nextItems.findIndex((item) => item.id === sourceId);
-    const targetIndex = nextItems.findIndex((item) => item.id === targetId);
-
-    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
-      return nextItems;
-    }
-
-    const [source] = nextItems.splice(sourceIndex, 1);
-    const insertIndex = nextItems.findIndex((item) => item.id === targetId);
-    nextItems.splice(insertIndex, 0, source);
-
-    return nextItems;
-  }
-
-  private moveItemAfter<T extends ReorderItem>(items: T[], sourceId: string, targetId: string): T[] {
-    const nextItems = [...items];
-    const sourceIndex = nextItems.findIndex((item) => item.id === sourceId);
-    const targetIndex = nextItems.findIndex((item) => item.id === targetId);
-
-    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
-      return nextItems;
-    }
-
-    const [source] = nextItems.splice(sourceIndex, 1);
-    const nextTargetIndex = nextItems.findIndex((item) => item.id === targetId);
-    nextItems.splice(nextTargetIndex + 1, 0, source);
-
-    return nextItems;
-  }
-
-  private resolveDropIntent(event: DragEvent): DropIntent {
-    const target = event.currentTarget as HTMLElement | null;
-
-    if (!target) {
-      return 'inside';
-    }
-
-    const rect = target.getBoundingClientRect();
-    const position = (event.clientX - rect.left) / rect.width;
-
-    if (position < 0.24) {
-      return 'before';
-    }
-
-    if (position > 0.76) {
-      return 'after';
-    }
-
-    return 'inside';
-  }
-
-  private mergeOrderedItems<T extends ReorderItem>(items: T[], orderedItems: T[]): T[] {
-    const orderedIds = new Set(orderedItems.map((item) => item.id));
-
-    return [
-      ...orderedItems,
-      ...items.filter((item) => !orderedIds.has(item.id)),
-    ];
-  }
-
-  private saveStoredOrder(key: string, items: ReorderItem[]): void {
-    localStorage.setItem(key, JSON.stringify(items.map((item) => item.id)));
-  }
-
-  private readStoredOrder(key: string): string[] {
-    const raw = localStorage.getItem(key);
-
-    if (!raw) {
-      return [];
-    }
-
-    try {
-      const value = JSON.parse(raw);
-      return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-    } catch {
-      return [];
-    }
-  }
-
-  private categoryOrderKey(scope: string | null): string {
-    return `memory.io.category-order.${scope ?? 'root'}`;
-  }
-
-  private memoryOrderKey(): string {
-    if (this.hasMemoryFilters()) {
-      return `memory.io.memory-order.filtered.${JSON.stringify(this.memoryFilters())}`;
-    }
-
-    return `memory.io.memory-order.${this.currentCategoryId() ?? 'root'}`;
-  }
-
   private favoriteKey(type: FavoriteType, id: string): string {
     return `${type}:${id}`;
   }
@@ -1391,13 +1205,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       }
     }
 
-    const sortNodes = (items: SidebarCategoryNode[]): SidebarCategoryNode[] => {
-      return items
-        .sort((left, right) => left.category.label.localeCompare(right.category.label))
-        .map((node) => ({ ...node, children: sortNodes(node.children) }));
-    };
-
-    return sortNodes(roots);
+    return roots;
   }
 
   private buildSidebarEntries(nodes: SidebarCategoryNode[], depth = 0): SidebarCategoryEntry[] {
