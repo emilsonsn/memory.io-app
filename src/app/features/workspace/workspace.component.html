@@ -305,7 +305,6 @@
           role="button"
           tabindex="0"
           [class.drop-target]="dropCategoryId() === category.id"
-          [class.drop-before]="dropCategoryId() === category.id"
           (click)="enterCategory(category)"
           (keyup.enter)="enterCategory(category)"
           (dragover)="allowCategoryDrop(category, $event)"
