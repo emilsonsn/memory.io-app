@@ -2,7 +2,7 @@ import { InjectionToken } from '@angular/core';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   providedIn: 'root',
-  factory: () => 'https://memory.techsoul.com.br/api',
+  factory: () => 'https://memoryia.emilsonsouza.com.br/api',
 });
 
 export const SETS_API_BASE_URL = new InjectionToken<string | null>('SETS_API_BASE_URL', {
