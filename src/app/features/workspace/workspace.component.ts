@@ -2,8 +2,8 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Observable, catchError, finalize, forkJoin, of } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -119,6 +119,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private readonly memoriesApi = inject(MemoriesApiService);
   readonly authStore = inject(AuthStore);
   private readonly appLoading = inject(AppLoadingService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
@@ -187,6 +188,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   private searchDebounce: number | null = null;
   private expandedLastSavedSnapshot = '';
+  private routeSubscription: Subscription | null = null;
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -257,10 +259,22 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.currentCategoryId.set(this.route.snapshot.paramMap.get('categoryId'));
     this.loadData();
+    this.routeSubscription = this.route.paramMap.subscribe((params) => {
+      const categoryId = params.get('categoryId');
+
+      if (categoryId === this.currentCategoryId()) {
+        return;
+      }
+
+      this.currentCategoryId.set(categoryId);
+      this.loadMemories();
+    });
   }
 
   ngOnDestroy(): void {
+    this.routeSubscription?.unsubscribe();
     this.saveExpandedMemoryIfNeeded();
   }
 
@@ -550,24 +564,34 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   enterCategory(category: Category): void {
-    this.currentCategoryId.set(category.id);
-    this.loadMemories();
+    this.navigateToCategory(category.id);
   }
 
   goToRoot(): void {
-    this.currentCategoryId.set(null);
-    this.loadMemories();
+    this.navigateToRoot();
   }
 
   goToCategory(category: Category): void {
-    this.currentCategoryId.set(category.id);
-    this.loadMemories();
+    this.navigateToCategory(category.id);
   }
 
   goUp(): void {
     const current = this.currentCategory();
-    this.currentCategoryId.set(current?.parent_id ?? null);
-    this.loadMemories();
+
+    if (current?.parent_id) {
+      this.navigateToCategory(current.parent_id);
+      return;
+    }
+
+    this.navigateToRoot();
+  }
+
+  private navigateToRoot(): void {
+    void this.router.navigate(['/app']);
+  }
+
+  private navigateToCategory(categoryId: string): void {
+    void this.router.navigate(['/app', 'category', categoryId]);
   }
 
   updateMemoryFilter(key: MemoryFilterKey, value: string): void {
@@ -1111,13 +1135,21 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       next: () => {
         this.categories.update((categories) => categories.filter((item) => item.id !== category.id));
 
-        if (this.currentCategoryId() === category.id) {
-          this.currentCategoryId.set(category.parent_id);
+        const deletedCurrentCategory = this.currentCategoryId() === category.id;
+
+        if (deletedCurrentCategory) {
+          if (category.parent_id) {
+            this.navigateToCategory(category.parent_id);
+          } else {
+            this.navigateToRoot();
+          }
         }
 
         this.toastr.success('Categoria excluida com sucesso.');
         this.closeDeleteDialog();
-        this.loadMemories();
+        if (!deletedCurrentCategory) {
+          this.loadMemories();
+        }
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
     });
