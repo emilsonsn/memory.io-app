@@ -299,6 +299,19 @@
     }
 
     <section class="library-grid">
+      @if (!loading() && (visibleCategories().length > 0 || visibleMemories().length > 0)) {
+        <article class="insight-card">
+          <div>
+            <h2>Novo Insight</h2>
+            
+          </div>
+          <div class="insight-actions">
+            <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
+            <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
+          </div>
+        </article>
+      }
+
       @for (category of visibleCategories(); track category.id) {
         <article
           class="folder-card"
@@ -530,18 +543,6 @@
         </article>
       }
 
-      @if (!loading() && (visibleCategories().length > 0 || visibleMemories().length > 0)) {
-        <article class="insight-card">
-          <div>
-            <h2>Novo Insight</h2>
-            
-          </div>
-          <div class="insight-actions">
-            <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
-            <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
-          </div>
-        </article>
-      }
     </section>
 
     }
