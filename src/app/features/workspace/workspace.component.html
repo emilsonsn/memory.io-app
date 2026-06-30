@@ -415,6 +415,22 @@
         >
           <button
             type="button"
+            class="duplicate-memory-button"
+            [class.loading]="isDuplicatingMemory(memory.id)"
+            [title]="isDuplicatingMemory(memory.id) ? 'Duplicando memoria' : 'Duplicar memoria'"
+            [attr.aria-label]="isDuplicatingMemory(memory.id) ? 'Duplicando memoria' : 'Duplicar memoria'"
+            [disabled]="isDuplicatingMemory(memory.id)"
+            (click)="duplicateMemory(memory, $event)"
+          >
+            @if (isDuplicatingMemory(memory.id)) {
+              <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+            } @else {
+              <fa-icon [icon]="icons.clone" aria-hidden="true" />
+            }
+          </button>
+
+          <button
+            type="button"
             class="favorite-button"
             [class.active]="isFavorite('memory', memory.id)"
             [class.loading]="isFavoriteLoading('memory', memory.id)"

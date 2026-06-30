@@ -121,7 +121,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .folder-card,
@@ -129,22 +129,24 @@
   position: relative;
   display: grid;
   gap: 12px;
-  min-height: 172px;
+  height: 272px;
+  min-height: 272px;
   padding: 16px 16px 52px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .folder-card {
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
   cursor: pointer;
 }
 
 .memory-card {
-  align-content: start;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   background: var(--surface-note);
   cursor: pointer;
 }
@@ -160,6 +162,10 @@
 .memory-card h2 {
   padding-right: 34px;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .folder-card p,
@@ -169,15 +175,31 @@
   overflow-wrap: anywhere;
 }
 
+.folder-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.folder-card > div:not(.folder-icon):not(.category-box-icon) {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 10px;
+}
+
 .memory-content {
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .memory-preview {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 7;
+  -webkit-line-clamp: 5;
   padding-right: 38px;
 }
 
@@ -190,6 +212,11 @@
   font-size: 0.76rem;
   font-weight: 650;
   letter-spacing: 0;
+}
+
+.memory-card .tag-row {
+  max-height: 60px;
+  overflow: hidden;
 }
 
 .card-meta span + span::before {

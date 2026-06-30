@@ -52,6 +52,10 @@ export class MemoriesApiService {
     return this.api.post<Memory>('/memories', payload);
   }
 
+  duplicate(id: string): Observable<Memory> {
+    return this.api.post<Memory>(`/memories/${id}/duplicate`, {});
+  }
+
   update(id: string, payload: MemoryPayload): Observable<Memory> {
     return this.api.patch<Memory>(`/memories/${id}`, payload);
   }

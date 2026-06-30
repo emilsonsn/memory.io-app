@@ -13,6 +13,7 @@ import {
   faBoxArchive,
   faChevronDown,
   faChevronRight,
+  faClone,
   faCopy,
   faEllipsisVertical,
   faFolderOpen,
@@ -135,6 +136,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly allMemories = signal<Memory[]>([]);
   readonly favorites = signal<Favorite[]>([]);
   readonly favoriteRequestKeys = signal<string[]>([]);
+  readonly duplicateMemoryIds = signal<string[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly expandedMemory = signal<Memory | null>(null);
@@ -154,6 +156,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     box: faBoxArchive,
     chevronDown: faChevronDown,
     chevronRight: faChevronRight,
+    clone: faClone,
     copy: faCopy,
     ellipsis: faEllipsisVertical,
     folderOpen: faFolderOpen,
@@ -862,6 +865,31 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         }
       }, 1200);
     }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
+  }
+
+  duplicateMemory(memory: Memory, event: Event): void {
+    event.stopPropagation();
+
+    if (this.duplicateMemoryIds().includes(memory.id)) {
+      return;
+    }
+
+    this.duplicateMemoryIds.update((ids) => [...ids, memory.id]);
+
+    this.memoriesApi.duplicate(memory.id).pipe(
+      finalize(() => this.duplicateMemoryIds.update((ids) => ids.filter((id) => id !== memory.id))),
+    ).subscribe({
+      next: () => {
+        this.toastr.success('Memoria duplicada com sucesso.');
+        this.loadMemories();
+        this.loadDashboardMemories();
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  isDuplicatingMemory(id: string): boolean {
+    return this.duplicateMemoryIds().includes(id);
   }
 
   isFavorite(type: FavoriteType, id: string): boolean {

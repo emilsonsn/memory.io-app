@@ -591,10 +591,10 @@ textarea:not(.mat-mdc-input-element):focus {
   color: var(--muted);
 }
 
-.favorite-button {
+.favorite-button,
+.duplicate-memory-button {
   position: absolute;
   top: 10px;
-  right: 46px;
   z-index: 3;
   display: inline-flex;
   align-items: center;
@@ -607,7 +607,16 @@ textarea:not(.mat-mdc-input-element):focus {
   color: var(--muted-soft);
 }
 
-.favorite-button:hover {
+.favorite-button {
+  right: 46px;
+}
+
+.duplicate-memory-button {
+  right: 82px;
+}
+
+.favorite-button:hover,
+.duplicate-memory-button:hover {
   border-color: var(--line);
   background: var(--surface);
 }
@@ -617,12 +626,15 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .favorite-button.loading,
-.favorite-button:disabled {
+.favorite-button:disabled,
+.duplicate-memory-button.loading,
+.duplicate-memory-button:disabled {
   cursor: wait;
   opacity: 0.82;
 }
 
-.favorite-button.loading fa-icon {
+.favorite-button.loading fa-icon,
+.duplicate-memory-button.loading fa-icon {
   animation: favorite-spin 0.75s linear infinite;
 }
 
@@ -1149,7 +1161,7 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .compact-note-editor .ql-container {
-  max-height: min(44vh, 420px);
+  max-height: min(54vh, 520px);
   border: 0;
   color: var(--text);
   font-family: inherit;
@@ -1157,8 +1169,8 @@ textarea:not(.mat-mdc-input-element):focus {
 }
 
 .compact-note-editor .ql-editor {
-  min-height: 280px;
-  max-height: min(44vh, 420px);
+  min-height: 360px;
+  max-height: min(54vh, 520px);
   overflow: auto;
   line-height: 1.6;
   padding: 14px 16px;
