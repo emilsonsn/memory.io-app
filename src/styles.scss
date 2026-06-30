@@ -601,10 +601,11 @@ textarea:not(.mat-mdc-input-element):focus {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-overlay);
-  color: var(--muted-soft);
+  background: var(--surface-elevated);
+  color: var(--muted);
+  box-shadow: var(--shadow-soft);
 }
 
 .favorite-button {
@@ -617,8 +618,9 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .favorite-button:hover,
 .duplicate-memory-button:hover {
-  border-color: var(--line);
+  border-color: var(--line-strong);
   background: var(--surface);
+  color: var(--text);
 }
 
 .favorite-button.active {

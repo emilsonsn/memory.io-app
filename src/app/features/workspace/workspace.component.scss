@@ -131,7 +131,7 @@
   gap: 12px;
   height: 272px;
   min-height: 272px;
-  padding: 16px 16px 52px;
+  padding: 12px 16px 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -141,12 +141,12 @@
 }
 
 .folder-card {
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   cursor: pointer;
 }
 
 .memory-card {
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
   background: var(--surface-note);
   cursor: pointer;
 }
@@ -160,7 +160,6 @@
 
 .folder-card h2,
 .memory-card h2 {
-  padding-right: 34px;
   overflow-wrap: anywhere;
   display: -webkit-box;
   overflow: hidden;
@@ -189,6 +188,28 @@
   gap: 10px;
 }
 
+.card-action-header {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.card-action-header .card-settings-button,
+.card-action-header .favorite-button,
+.card-action-header .duplicate-memory-button,
+.card-action-header .copy-memory-button,
+.card-action-header .card-delete-button {
+  position: static;
+  inset: auto;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-soft);
+}
+
 .memory-content {
   position: relative;
   min-height: 0;
@@ -200,7 +221,6 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 5;
-  padding-right: 38px;
 }
 
 .memory-preview :is(p, h1, h2, h3, ul, ol) {
@@ -226,9 +246,6 @@
 }
 
 .copy-memory-button {
-  position: absolute;
-  top: 0;
-  right: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -247,9 +264,6 @@
 }
 
 .card-delete-button {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

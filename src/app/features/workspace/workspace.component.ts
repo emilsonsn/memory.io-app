@@ -854,8 +854,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   copyMemoryContent(memory: Memory, event: Event): void {
     event.stopPropagation();
+    const content = this.htmlToText(memory.content);
 
-    void this.copyToClipboard(memory.content).then(() => {
+    if (!content.trim()) {
+      return;
+    }
+
+    void this.copyToClipboard(content).then(() => {
       this.copiedMemoryId.set(memory.id);
       this.toastr.success('Conteudo copiado.');
 
@@ -1311,6 +1316,12 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     textarea.select();
     document.execCommand('copy');
     textarea.remove();
+  }
+
+  private htmlToText(value: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = value;
+    return container.textContent ?? container.innerText ?? value;
   }
 
   private formatDateForApi(value: Date | null): string {
