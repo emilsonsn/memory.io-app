@@ -121,7 +121,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .folder-card,
@@ -129,22 +129,24 @@
   position: relative;
   display: grid;
   gap: 12px;
-  min-height: 172px;
-  padding: 16px 16px 52px;
+  height: 272px;
+  min-height: 272px;
+  padding: 12px 16px 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .folder-card {
-  align-content: start;
+  grid-template-rows: auto auto minmax(0, 1fr);
   cursor: pointer;
 }
 
 .memory-card {
-  align-content: start;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
   background: var(--surface-note);
   cursor: pointer;
 }
@@ -158,8 +160,11 @@
 
 .folder-card h2,
 .memory-card h2 {
-  padding-right: 34px;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .folder-card p,
@@ -169,16 +174,53 @@
   overflow-wrap: anywhere;
 }
 
+.folder-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.folder-card > div:not(.folder-icon):not(.category-box-icon) {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 10px;
+}
+
+.card-action-header {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.card-action-header .card-settings-button,
+.card-action-header .favorite-button,
+.card-action-header .duplicate-memory-button,
+.card-action-header .copy-memory-button,
+.card-action-header .card-delete-button {
+  position: static;
+  inset: auto;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-soft);
+}
+
 .memory-content {
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .memory-preview {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 7;
-  padding-right: 38px;
+  -webkit-line-clamp: 5;
 }
 
 .memory-preview :is(p, h1, h2, h3, ul, ol) {
@@ -192,6 +234,11 @@
   letter-spacing: 0;
 }
 
+.memory-card .tag-row {
+  max-height: 60px;
+  overflow: hidden;
+}
+
 .card-meta span + span::before {
   content: '•';
   margin-right: 8px;
@@ -199,9 +246,6 @@
 }
 
 .copy-memory-button {
-  position: absolute;
-  top: 0;
-  right: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -220,9 +264,6 @@
 }
 
 .card-delete-button {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -257,6 +298,20 @@
   background: inherit;
   filter: brightness(0.92);
   transform: translateY(-6px);
+}
+
+.favorite-set-card .folder-icon,
+.favorite-set-card .category-box-icon {
+  width: 34px;
+  height: 28px;
+  font-size: 0.95rem;
+}
+
+.favorite-set-card .folder-icon::before {
+  width: 16px;
+  height: 6px;
+  margin-left: 6px;
+  transform: translateY(-4px);
 }
 
 .memory-color {

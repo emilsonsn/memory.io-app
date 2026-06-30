@@ -6,7 +6,9 @@
 }
 
 .dialog-panel.note-dialog {
-  width: min(100%, 600px);
+  width: min(100%, 760px);
+  min-height: min(680px, calc(100vh - 36px));
+  max-height: min(840px, calc(100vh - 36px));
   gap: 0;
   padding: 0;
   overflow: hidden;
@@ -45,6 +47,7 @@
   display: grid;
   gap: 2px;
   padding: 0 16px 12px;
+  min-height: 0;
 }
 
 .note-title {

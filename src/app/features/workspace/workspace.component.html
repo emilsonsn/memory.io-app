@@ -231,7 +231,7 @@
       <section class="library-section" aria-labelledby="favorites-title">
         <h2 id="favorites-title">Favoritos</h2>
         @if (favoriteItems().length > 0) {
-          <div class="library-grid">
+          <div class="favorites-carousel" aria-label="Favoritos salvos">
             @for (favorite of favoriteItems(); track favorite.type + favorite.item.id) {
               <article
                 class="favorite-set-card"
@@ -299,6 +299,19 @@
     }
 
     <section class="library-grid">
+      @if (!loading() && (visibleCategories().length > 0 || visibleMemories().length > 0)) {
+        <article class="insight-card">
+          <div>
+            <h2>Novo Insight</h2>
+            
+          </div>
+          <div class="insight-actions">
+            <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
+            <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
+          </div>
+        </article>
+      }
+
       @for (category of visibleCategories(); track category.id) {
         <article
           class="folder-card"
@@ -311,37 +324,71 @@
           (dragleave)="leaveDropTarget($event)"
           (drop)="dropMemoryOnCategory(category, $event)"
         >
-          <button
-            type="button"
-            class="favorite-button"
-            [class.active]="isFavorite('category', category.id)"
-            [class.loading]="isFavoriteLoading('category', category.id)"
-            [title]="isFavorite('category', category.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
-            [attr.aria-label]="isFavorite('category', category.id) ? 'Remover categoria dos favoritos' : 'Adicionar categoria aos favoritos'"
-            [disabled]="isFavoriteLoading('category', category.id)"
-            (click)="toggleFavorite('category', category.id, $event)"
-          >
-            @if (isFavoriteLoading('category', category.id)) {
-              <fa-icon [icon]="icons.spinner" aria-hidden="true" />
-            } @else {
-              <fa-icon [icon]="icons.star" aria-hidden="true" />
-            }
-          </button>
+          <header class="card-action-header" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="favorite-button"
+              [class.active]="isFavorite('category', category.id)"
+              [class.loading]="isFavoriteLoading('category', category.id)"
+              [title]="isFavorite('category', category.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+              [attr.aria-label]="isFavorite('category', category.id) ? 'Remover categoria dos favoritos' : 'Adicionar categoria aos favoritos'"
+              [disabled]="isFavoriteLoading('category', category.id)"
+              (click)="toggleFavorite('category', category.id, $event)"
+            >
+              @if (isFavoriteLoading('category', category.id)) {
+                <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+              } @else {
+                <fa-icon [icon]="icons.star" aria-hidden="true" />
+              }
+            </button>
 
-          <button
-            type="button"
-            class="card-settings-button"
-            title="Configuracoes rapidas"
-            aria-label="Configuracoes rapidas da categoria"
-            [class.active]="quickSettingsOpen('category', category.id)"
-            (click)="toggleQuickSettings('category', category.id, $event)"
-          >
-            <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
-          </button>
+            <button
+              type="button"
+              class="card-delete-button"
+              title="Excluir categoria"
+              aria-label="Excluir categoria"
+              (click)="removeCategory(category, $event)"
+            >
+              <fa-icon [icon]="icons.trash" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              class="card-settings-button"
+              title="Configuracoes rapidas"
+              aria-label="Configuracoes rapidas da categoria"
+              [class.active]="quickSettingsOpen('category', category.id)"
+              (click)="toggleQuickSettings('category', category.id, $event)"
+            >
+              <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
+            </button>
+          </header>
 
           @if (quickSettingsOpen('category', category.id)) {
             <div class="quick-settings-menu" (click)="$event.stopPropagation()">
               <button type="button" (click)="editCategoryFromQuickSettings(category, $event)">Editar titulo e descricao</button>
+              <button type="button" [disabled]="isExportingCategory(category.id)" (click)="exportCategory(category, $event)">
+                @if (isExportingCategory(category.id)) {
+                  Exportando...
+                } @else {
+                  Exportar categoria
+                }
+              </button>
+              <button type="button" [disabled]="isImportingCategory(category.id)" (click)="categoryImportInput.click()">
+                @if (isImportingCategory(category.id)) {
+                  Importando...
+                } @else {
+                  Importar memorias
+                }
+              </button>
+              <input
+                #categoryImportInput
+                class="visually-hidden-file-input"
+                type="file"
+                accept=".md,.txt,text/markdown,text/plain"
+                multiple
+                (change)="importMemoriesIntoCategory(category, $event)"
+              >
               <span>Cor</span>
               <div class="color-swatch-row">
                 <button
@@ -385,15 +432,6 @@
               <span>Atual. {{ category.updated_at | date:'dd/MM' }}</span>
             </div>
           </div>
-          <button
-            type="button"
-            class="card-delete-button"
-            title="Excluir categoria"
-            aria-label="Excluir categoria"
-            (click)="removeCategory(category, $event)"
-          >
-            <fa-icon [icon]="icons.trash" aria-hidden="true" />
-          </button>
         </article>
       }
 
@@ -413,37 +451,82 @@
           (dragleave)="leaveDropTarget($event)"
           (drop)="dropMemoryOnMemory(memory, $event)"
         >
-          <button
-            type="button"
-            class="favorite-button"
-            [class.active]="isFavorite('memory', memory.id)"
-            [class.loading]="isFavoriteLoading('memory', memory.id)"
-            [title]="isFavorite('memory', memory.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
-            [attr.aria-label]="isFavorite('memory', memory.id) ? 'Remover memoria dos favoritos' : 'Adicionar memoria aos favoritos'"
-            [disabled]="isFavoriteLoading('memory', memory.id)"
-            (click)="toggleFavorite('memory', memory.id, $event)"
-          >
-            @if (isFavoriteLoading('memory', memory.id)) {
-              <fa-icon [icon]="icons.spinner" aria-hidden="true" />
-            } @else {
-              <fa-icon [icon]="icons.star" aria-hidden="true" />
-            }
-          </button>
+          <header class="card-action-header" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="duplicate-memory-button"
+              [class.loading]="isDuplicatingMemory(memory.id)"
+              [title]="isDuplicatingMemory(memory.id) ? 'Duplicando memoria' : 'Duplicar memoria'"
+              [attr.aria-label]="isDuplicatingMemory(memory.id) ? 'Duplicando memoria' : 'Duplicar memoria'"
+              [disabled]="isDuplicatingMemory(memory.id)"
+              (click)="duplicateMemory(memory, $event)"
+            >
+              @if (isDuplicatingMemory(memory.id)) {
+                <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+              } @else {
+                <fa-icon [icon]="icons.clone" aria-hidden="true" />
+              }
+            </button>
 
-          <button
-            type="button"
-            class="card-settings-button"
-            title="Configuracoes rapidas"
-            aria-label="Configuracoes rapidas da memoria"
-            [class.active]="quickSettingsOpen('memory', memory.id)"
-            (click)="toggleQuickSettings('memory', memory.id, $event)"
-          >
-            <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
-          </button>
+            <button
+              type="button"
+              class="favorite-button"
+              [class.active]="isFavorite('memory', memory.id)"
+              [class.loading]="isFavoriteLoading('memory', memory.id)"
+              [title]="isFavorite('memory', memory.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+              [attr.aria-label]="isFavorite('memory', memory.id) ? 'Remover memoria dos favoritos' : 'Adicionar memoria aos favoritos'"
+              [disabled]="isFavoriteLoading('memory', memory.id)"
+              (click)="toggleFavorite('memory', memory.id, $event)"
+            >
+              @if (isFavoriteLoading('memory', memory.id)) {
+                <fa-icon [icon]="icons.spinner" aria-hidden="true" />
+              } @else {
+                <fa-icon [icon]="icons.star" aria-hidden="true" />
+              }
+            </button>
+
+            <button
+              class="copy-memory-button"
+              type="button"
+              [attr.aria-label]="copiedMemoryId() === memory.id ? 'Conteudo copiado' : 'Copiar conteudo'"
+              [title]="copiedMemoryId() === memory.id ? 'Copiado' : 'Copiar conteudo'"
+              (click)="copyMemoryContent(memory, $event)"
+            >
+              <fa-icon [icon]="icons.copy" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              class="card-delete-button"
+              title="Excluir memoria"
+              aria-label="Excluir memoria"
+              (click)="removeMemory(memory, $event)"
+            >
+              <fa-icon [icon]="icons.trash" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              class="card-settings-button"
+              title="Configuracoes rapidas"
+              aria-label="Configuracoes rapidas da memoria"
+              [class.active]="quickSettingsOpen('memory', memory.id)"
+              (click)="toggleQuickSettings('memory', memory.id, $event)"
+            >
+              <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
+            </button>
+          </header>
 
           @if (quickSettingsOpen('memory', memory.id)) {
             <div class="quick-settings-menu" (click)="$event.stopPropagation()">
               <button type="button" (click)="editMemoryFromQuickSettings(memory, $event)">Editar titulo e descricao</button>
+              <button type="button" [disabled]="isExportingMemory(memory.id)" (click)="exportMemory(memory, $event)">
+                @if (isExportingMemory(memory.id)) {
+                  Exportando...
+                } @else {
+                  Exportar memoria
+                }
+              </button>
               <span>Cor</span>
               <div class="color-swatch-row">
                 <button
@@ -473,15 +556,6 @@
           <div class="memory-color {{ memory.color ?? 'gray' }}"></div>
           <h2>{{ memory.title }}</h2>
           <div class="memory-content">
-            <button
-              class="copy-memory-button"
-              type="button"
-              [attr.aria-label]="copiedMemoryId() === memory.id ? 'Conteudo copiado' : 'Copiar conteudo'"
-              [title]="copiedMemoryId() === memory.id ? 'Copiado' : 'Copiar conteudo'"
-              (click)="copyMemoryContent(memory, $event)"
-            >
-              <fa-icon [icon]="icons.copy" aria-hidden="true" />
-            </button>
             <div class="memory-preview" [innerHTML]="memory.content"></div>
           </div>
           <div class="tag-row">
@@ -495,30 +569,9 @@
           <div class="card-meta">
             <span>Atual. {{ memory.updated_at | date:'dd/MM' }}</span>
           </div>
-          <button
-            type="button"
-            class="card-delete-button"
-            title="Excluir memoria"
-            aria-label="Excluir memoria"
-            (click)="removeMemory(memory, $event)"
-          >
-            <fa-icon [icon]="icons.trash" aria-hidden="true" />
-          </button>
         </article>
       }
 
-      @if (!loading() && (visibleCategories().length > 0 || visibleMemories().length > 0)) {
-        <article class="insight-card">
-          <div>
-            <h2>Novo Insight</h2>
-            
-          </div>
-          <div class="insight-actions">
-            <button class="ghost-button" type="button" (click)="openCreateCategory()">Criar categoria</button>
-            <button class="primary-button" type="button" (click)="openCreateMemory()">Criar memoria</button>
-          </div>
-        </article>
-      }
     </section>
 
     }

@@ -1,9 +1,9 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Observable, catchError, finalize, forkJoin, of } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -13,6 +13,7 @@ import {
   faBoxArchive,
   faChevronDown,
   faChevronRight,
+  faClone,
   faCopy,
   faEllipsisVertical,
   faFolderOpen,
@@ -118,6 +119,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private readonly memoriesApi = inject(MemoriesApiService);
   readonly authStore = inject(AuthStore);
   private readonly appLoading = inject(AppLoadingService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
@@ -135,6 +137,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly allMemories = signal<Memory[]>([]);
   readonly favorites = signal<Favorite[]>([]);
   readonly favoriteRequestKeys = signal<string[]>([]);
+  readonly duplicateMemoryIds = signal<string[]>([]);
+  readonly exportingCategoryIds = signal<string[]>([]);
+  readonly exportingMemoryIds = signal<string[]>([]);
+  readonly importingCategoryIds = signal<string[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly expandedMemory = signal<Memory | null>(null);
@@ -154,6 +160,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     box: faBoxArchive,
     chevronDown: faChevronDown,
     chevronRight: faChevronRight,
+    clone: faClone,
     copy: faCopy,
     ellipsis: faEllipsisVertical,
     folderOpen: faFolderOpen,
@@ -184,6 +191,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   private searchDebounce: number | null = null;
   private expandedLastSavedSnapshot = '';
+  private routeSubscription: Subscription | null = null;
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -254,10 +262,22 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.currentCategoryId.set(this.route.snapshot.paramMap.get('categoryId'));
     this.loadData();
+    this.routeSubscription = this.route.paramMap.subscribe((params) => {
+      const categoryId = params.get('categoryId');
+
+      if (categoryId === this.currentCategoryId()) {
+        return;
+      }
+
+      this.currentCategoryId.set(categoryId);
+      this.loadMemories();
+    });
   }
 
   ngOnDestroy(): void {
+    this.routeSubscription?.unsubscribe();
     this.saveExpandedMemoryIfNeeded();
   }
 
@@ -535,6 +555,83 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  exportCategory(category: Category, event: Event): void {
+    event.stopPropagation();
+
+    if (this.exportingCategoryIds().includes(category.id)) {
+      return;
+    }
+
+    this.exportingCategoryIds.update((ids) => [...ids, category.id]);
+
+    this.categoriesApi.export(category.id).pipe(
+      finalize(() => this.exportingCategoryIds.update((ids) => ids.filter((id) => id !== category.id))),
+    ).subscribe({
+      next: (response) => {
+        this.downloadResponse(response, `${category.label || 'categoria'}.zip`);
+        this.toastr.success('Categoria exportada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  exportMemory(memory: Memory, event: Event): void {
+    event.stopPropagation();
+
+    if (this.exportingMemoryIds().includes(memory.id)) {
+      return;
+    }
+
+    this.exportingMemoryIds.update((ids) => [...ids, memory.id]);
+
+    this.memoriesApi.export(memory.id).pipe(
+      finalize(() => this.exportingMemoryIds.update((ids) => ids.filter((id) => id !== memory.id))),
+    ).subscribe({
+      next: (response) => {
+        this.downloadResponse(response, `${memory.title || 'memoria'}.txt`);
+        this.toastr.success('Memoria exportada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  importMemoriesIntoCategory(category: Category, event: Event): void {
+    event.stopPropagation();
+
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+
+    if (files.length === 0 || this.importingCategoryIds().includes(category.id)) {
+      return;
+    }
+
+    this.importingCategoryIds.update((ids) => [...ids, category.id]);
+
+    this.categoriesApi.importMemories(category.id, files).pipe(
+      finalize(() => this.importingCategoryIds.update((ids) => ids.filter((id) => id !== category.id))),
+    ).subscribe({
+      next: (memories) => {
+        this.toastr.success(`${memories.length} memoria(s) importada(s) com sucesso.`);
+        this.loadMemories();
+        this.loadDashboardMemories();
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  isExportingCategory(id: string): boolean {
+    return this.exportingCategoryIds().includes(id);
+  }
+
+  isExportingMemory(id: string): boolean {
+    return this.exportingMemoryIds().includes(id);
+  }
+
+  isImportingCategory(id: string): boolean {
+    return this.importingCategoryIds().includes(id);
+  }
+
   closeDialog(): void {
     if (this.saving()) {
       return;
@@ -547,24 +644,34 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   enterCategory(category: Category): void {
-    this.currentCategoryId.set(category.id);
-    this.loadMemories();
+    this.navigateToCategory(category.id);
   }
 
   goToRoot(): void {
-    this.currentCategoryId.set(null);
-    this.loadMemories();
+    this.navigateToRoot();
   }
 
   goToCategory(category: Category): void {
-    this.currentCategoryId.set(category.id);
-    this.loadMemories();
+    this.navigateToCategory(category.id);
   }
 
   goUp(): void {
     const current = this.currentCategory();
-    this.currentCategoryId.set(current?.parent_id ?? null);
-    this.loadMemories();
+
+    if (current?.parent_id) {
+      this.navigateToCategory(current.parent_id);
+      return;
+    }
+
+    this.navigateToRoot();
+  }
+
+  private navigateToRoot(): void {
+    void this.router.navigate(['/app']);
+  }
+
+  private navigateToCategory(categoryId: string): void {
+    void this.router.navigate(['/app', 'category', categoryId]);
   }
 
   updateMemoryFilter(key: MemoryFilterKey, value: string): void {
@@ -851,8 +958,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   copyMemoryContent(memory: Memory, event: Event): void {
     event.stopPropagation();
+    const content = this.htmlToText(memory.content);
 
-    void this.copyToClipboard(memory.content).then(() => {
+    if (!content.trim()) {
+      return;
+    }
+
+    void this.copyToClipboard(content).then(() => {
       this.copiedMemoryId.set(memory.id);
       this.toastr.success('Conteudo copiado.');
 
@@ -862,6 +974,31 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         }
       }, 1200);
     }).catch(() => this.toastr.error('Nao foi possivel copiar o conteudo.'));
+  }
+
+  duplicateMemory(memory: Memory, event: Event): void {
+    event.stopPropagation();
+
+    if (this.duplicateMemoryIds().includes(memory.id)) {
+      return;
+    }
+
+    this.duplicateMemoryIds.update((ids) => [...ids, memory.id]);
+
+    this.memoriesApi.duplicate(memory.id).pipe(
+      finalize(() => this.duplicateMemoryIds.update((ids) => ids.filter((id) => id !== memory.id))),
+    ).subscribe({
+      next: () => {
+        this.toastr.success('Memoria duplicada com sucesso.');
+        this.loadMemories();
+        this.loadDashboardMemories();
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  isDuplicatingMemory(id: string): boolean {
+    return this.duplicateMemoryIds().includes(id);
   }
 
   isFavorite(type: FavoriteType, id: string): boolean {
@@ -1078,13 +1215,21 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       next: () => {
         this.categories.update((categories) => categories.filter((item) => item.id !== category.id));
 
-        if (this.currentCategoryId() === category.id) {
-          this.currentCategoryId.set(category.parent_id);
+        const deletedCurrentCategory = this.currentCategoryId() === category.id;
+
+        if (deletedCurrentCategory) {
+          if (category.parent_id) {
+            this.navigateToCategory(category.parent_id);
+          } else {
+            this.navigateToRoot();
+          }
         }
 
         this.toastr.success('Categoria excluida com sucesso.');
         this.closeDeleteDialog();
-        this.loadMemories();
+        if (!deletedCurrentCategory) {
+          this.loadMemories();
+        }
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
     });
@@ -1283,6 +1428,41 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     textarea.select();
     document.execCommand('copy');
     textarea.remove();
+  }
+
+  private downloadResponse(response: HttpResponse<Blob>, fallbackFilename: string): void {
+    const blob = response.body;
+
+    if (!blob) {
+      this.toastr.error('Arquivo de exportacao vazio.');
+      return;
+    }
+
+    const filename = this.filenameFromResponse(response) || fallbackFilename;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private filenameFromResponse(response: HttpResponse<Blob>): string | null {
+    const disposition = response.headers.get('Content-Disposition') ?? response.headers.get('content-disposition');
+    const filenameMatch = disposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+    return filename ? decodeURIComponent(filename) : null;
+  }
+
+  private htmlToText(value: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = value;
+    return container.textContent ?? container.innerText ?? value;
   }
 
   private formatDateForApi(value: Date | null): string {

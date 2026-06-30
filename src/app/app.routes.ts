@@ -16,6 +16,11 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
+    path: 'app/category/:categoryId',
+    component: WorkspaceComponent,
+    canActivate: [authGuard],
+  },
+  {
     path: 'app',
     component: WorkspaceComponent,
     canActivate: [authGuard],
