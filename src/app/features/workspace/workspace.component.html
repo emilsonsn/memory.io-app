@@ -126,7 +126,7 @@
     <header class="page-header">
       <div>
         @if (expandedMemory()) {
-          <form class="expanded-title-form" [formGroup]="expandedNoteForm" (focusout)="saveExpandedMemoryIfNeeded()">
+          <form class="expanded-title-form" [formGroup]="expandedNoteForm">
             <input
               type="text"
               formControlName="title"
@@ -170,6 +170,9 @@
 
       <div class="header-actions">
         @if (expandedMemory()) {
+          <button class="primary-button compact" type="button" [disabled]="saving() || expandedNoteForm.invalid" (click)="saveExpandedMemoryIfNeeded()">
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </button>
           <button class="ghost-button compact expanded-close-button" type="button" aria-label="Fechar nota" title="Fechar nota" (click)="closeExpandedMemory()">
             <fa-icon [icon]="icons.close" aria-hidden="true" />
           </button>
@@ -218,7 +221,7 @@
     }
 
     @if (expandedMemory()) {
-      <form class="expanded-editor-shell" [formGroup]="expandedNoteForm" (focusout)="saveExpandedMemoryIfNeeded()">
+      <form class="expanded-editor-shell" [formGroup]="expandedNoteForm">
         <quill-editor
           class="workspace-note-editor"
           formControlName="content"

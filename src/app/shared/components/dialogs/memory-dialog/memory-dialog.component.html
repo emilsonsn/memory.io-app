@@ -3,7 +3,6 @@
     class="dialog-panel note-dialog"
     [formGroup]="form"
     (ngSubmit)="submit()"
-    (focusout)="saveOnFocusOut($event)"
     (click)="$event.stopPropagation()"
   >
     <header class="note-header">
@@ -125,6 +124,9 @@
       </button>
 
       <div class="action-group">
+        <button class="primary-button" type="submit" [disabled]="saving || form.invalid">
+          {{ saving ? 'Salvando...' : 'Salvar' }}
+        </button>
         <button class="primary-button" type="button" (click)="expandNote()">
           <fa-icon [icon]="icons.expand" aria-hidden="true" />
           Expandir

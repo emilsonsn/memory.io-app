@@ -30,7 +30,6 @@ export class MemoryDialogComponent implements OnChanges {
   advancedOpen = false;
   categoriesOpen = false;
   contentCopied = false;
-  private lastSavedSnapshot = '';
   readonly icons = {
     chevronDown: faChevronDown,
     copy: faCopy,
@@ -69,7 +68,6 @@ export class MemoryDialogComponent implements OnChanges {
           ? this.memory.categories.map((category) => category.id)
           : this.defaultCategoryId ? [this.defaultCategoryId] : [],
       });
-      this.lastSavedSnapshot = this.formSnapshot();
     }
   }
 
@@ -153,35 +151,15 @@ export class MemoryDialogComponent implements OnChanges {
   }
 
   requestClose(): void {
-    this.saveIfNeeded();
     this.closeDialog.emit();
   }
 
   submit(): void {
-    this.saveIfNeeded();
-  }
-
-  saveOnFocusOut(event: FocusEvent): void {
-    if (event.currentTarget instanceof HTMLElement && event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
-      return;
-    }
-
-    this.saveIfNeeded();
-  }
-
-  saveIfNeeded(): void {
     if (this.form.invalid || this.saving) {
       return;
     }
 
-    const snapshot = this.formSnapshot();
-
-    if (snapshot === this.lastSavedSnapshot) {
-      return;
-    }
-
     this.saveMemory.emit(this.memoryPayload());
-    this.lastSavedSnapshot = snapshot;
   }
 
   private memoryPayload(): MemoryPayload {
@@ -194,10 +172,6 @@ export class MemoryDialogComponent implements OnChanges {
       due_date: value.due_date || null,
       category_ids: value.category_ids ?? [],
     };
-  }
-
-  private formSnapshot(): string {
-    return JSON.stringify(this.form.getRawValue());
   }
 
   hasRichContent(): boolean {

@@ -278,7 +278,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSubscription?.unsubscribe();
-    this.saveExpandedMemoryIfNeeded();
   }
 
   toggleSidebarPinned(): void {
@@ -406,7 +405,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   closeExpandedMemory(): void {
-    this.saveExpandedMemoryIfNeeded();
     this.expandedMemory.set(null);
   }
 
@@ -793,12 +791,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         this.editingMemory.set(memory);        
         this.loadMemories();
         this.loadDashboardMemories();
+        this.toastr.success(editing ? 'Memoria atualizada com sucesso.' : 'Memoria criada com sucesso.');
 
         if (this.expandMemoryAfterSave()) {
           this.expandMemoryAfterSave.set(false);
           this.closeAfterSave();
           this.openExpandedMemory(memory);
+          return;
         }
+
+        this.closeAfterSave();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
       complete: () => this.saving.set(false),
@@ -1181,6 +1183,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
         this.allMemories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
         this.expandedLastSavedSnapshot = snapshot;
+        this.toastr.success('Memoria salva com sucesso.');
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
       complete: () => this.saving.set(false),
