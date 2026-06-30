@@ -231,7 +231,7 @@
       <section class="library-section" aria-labelledby="favorites-title">
         <h2 id="favorites-title">Favoritos</h2>
         @if (favoriteItems().length > 0) {
-          <div class="library-grid">
+          <div class="favorites-carousel" aria-label="Favoritos salvos">
             @for (favorite of favoriteItems(); track favorite.type + favorite.item.id) {
               <article
                 class="favorite-set-card"
@@ -331,6 +331,16 @@
 
             <button
               type="button"
+              class="card-delete-button"
+              title="Excluir categoria"
+              aria-label="Excluir categoria"
+              (click)="removeCategory(category, $event)"
+            >
+              <fa-icon [icon]="icons.trash" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
               class="card-settings-button"
               title="Configuracoes rapidas"
               aria-label="Configuracoes rapidas da categoria"
@@ -338,16 +348,6 @@
               (click)="toggleQuickSettings('category', category.id, $event)"
             >
               <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              class="card-delete-button"
-              title="Excluir categoria"
-              aria-label="Excluir categoria"
-              (click)="removeCategory(category, $event)"
-            >
-              <fa-icon [icon]="icons.trash" aria-hidden="true" />
             </button>
           </header>
 
@@ -462,6 +462,16 @@
 
             <button
               type="button"
+              class="card-delete-button"
+              title="Excluir memoria"
+              aria-label="Excluir memoria"
+              (click)="removeMemory(memory, $event)"
+            >
+              <fa-icon [icon]="icons.trash" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
               class="card-settings-button"
               title="Configuracoes rapidas"
               aria-label="Configuracoes rapidas da memoria"
@@ -469,16 +479,6 @@
               (click)="toggleQuickSettings('memory', memory.id, $event)"
             >
               <fa-icon [icon]="icons.ellipsis" aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              class="card-delete-button"
-              title="Excluir memoria"
-              aria-label="Excluir memoria"
-              (click)="removeMemory(memory, $event)"
-            >
-              <fa-icon [icon]="icons.trash" aria-hidden="true" />
             </button>
           </header>
 

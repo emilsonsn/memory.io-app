@@ -1269,8 +1269,8 @@ textarea:not(.mat-mdc-input-element):focus {
 
 .library-section {
   display: grid;
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .library-section-title {
@@ -1295,40 +1295,102 @@ textarea:not(.mat-mdc-input-element):focus {
   font-size: 0.92rem;
 }
 
+.favorites-carousel {
+  display: flex;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 10px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.favorites-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.favorites-carousel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
 .favorite-set-card {
+  position: relative;
+  flex: 0 0 220px;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: start;
-  gap: 14px;
-  min-height: 118px;
+  gap: 10px;
+  min-height: 86px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  padding: 16px;
+  padding: 12px 38px 12px 12px;
   box-shadow: var(--shadow-card);
+  scroll-snap-align: start;
 }
 
 .favorite-set-card h3 {
-  margin: 0 0 6px;
-  font-size: 1rem;
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .favorite-set-card p {
+  display: -webkit-box;
+  overflow: hidden;
   margin: 0;
   color: var(--muted);
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.favorite-set-card .favorite-button {
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  font-size: 0.78rem;
+}
+
+.favorite-set-card .card-meta {
+  margin-top: 6px;
+  font-size: 0.7rem;
+}
+
+.favorite-set-card .folder-icon,
+.favorite-set-card .category-box-icon {
+  width: 34px;
+  height: 28px;
+  font-size: 0.95rem;
+}
+
+.favorite-set-card .folder-icon::before {
+  width: 16px;
+  height: 6px;
+  margin-left: 6px;
+  transform: translateY(-4px);
 }
 
 .favorite-set-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   background: var(--surface-soft);
   color: var(--primary);
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 
 .compact-memory-card {
