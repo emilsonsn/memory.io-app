@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Memory, MemoryPayload } from '../../../shared/models';
+import { API_BASE_URL } from '../api.config';
 import { ApiClientService } from '../api-client.service';
 
 export interface MemoryListFilters {
@@ -21,7 +23,11 @@ export interface MemoryListFilters {
 
 @Injectable({ providedIn: 'root' })
 export class MemoriesApiService {
-  constructor(private readonly api: ApiClientService) {}
+  constructor(
+    private readonly api: ApiClientService,
+    private readonly http: HttpClient,
+    @Inject(API_BASE_URL) private readonly apiBaseUrl: string,
+  ) {}
 
   list(filters: MemoryListFilters = {}): Observable<Memory[]> {
     const params: Record<string, string | number | boolean> = { per_page: 100 };
@@ -54,6 +60,13 @@ export class MemoriesApiService {
 
   duplicate(id: string): Observable<Memory> {
     return this.api.post<Memory>(`/memories/${id}/duplicate`, {});
+  }
+
+  export(id: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiBaseUrl}/memories/${id}/export`, {
+      observe: 'response',
+      responseType: 'blob',
+    });
   }
 
   update(id: string, payload: MemoryPayload): Observable<Memory> {

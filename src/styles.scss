@@ -682,6 +682,20 @@ textarea:not(.mat-mdc-input-element):focus {
   color: var(--primary);
 }
 
+.quick-settings-menu > button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.visually-hidden-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .quick-settings-menu > span {
   color: var(--muted);
   font-size: 0.76rem;
@@ -1328,6 +1342,7 @@ textarea:not(.mat-mdc-input-element):focus {
   background: var(--surface);
   padding: 12px 38px 12px 12px;
   box-shadow: var(--shadow-card);
+  cursor: pointer;
   scroll-snap-align: start;
 }
 

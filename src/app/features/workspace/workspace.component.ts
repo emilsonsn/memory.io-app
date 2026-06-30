@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -138,6 +138,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   readonly favorites = signal<Favorite[]>([]);
   readonly favoriteRequestKeys = signal<string[]>([]);
   readonly duplicateMemoryIds = signal<string[]>([]);
+  readonly exportingCategoryIds = signal<string[]>([]);
+  readonly exportingMemoryIds = signal<string[]>([]);
+  readonly importingCategoryIds = signal<string[]>([]);
   readonly editingCategory = signal<Category | null>(null);
   readonly editingMemory = signal<Memory | null>(null);
   readonly expandedMemory = signal<Memory | null>(null);
@@ -550,6 +553,83 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
       complete: () => this.saving.set(false),
     });
+  }
+
+  exportCategory(category: Category, event: Event): void {
+    event.stopPropagation();
+
+    if (this.exportingCategoryIds().includes(category.id)) {
+      return;
+    }
+
+    this.exportingCategoryIds.update((ids) => [...ids, category.id]);
+
+    this.categoriesApi.export(category.id).pipe(
+      finalize(() => this.exportingCategoryIds.update((ids) => ids.filter((id) => id !== category.id))),
+    ).subscribe({
+      next: (response) => {
+        this.downloadResponse(response, `${category.label || 'categoria'}.zip`);
+        this.toastr.success('Categoria exportada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  exportMemory(memory: Memory, event: Event): void {
+    event.stopPropagation();
+
+    if (this.exportingMemoryIds().includes(memory.id)) {
+      return;
+    }
+
+    this.exportingMemoryIds.update((ids) => [...ids, memory.id]);
+
+    this.memoriesApi.export(memory.id).pipe(
+      finalize(() => this.exportingMemoryIds.update((ids) => ids.filter((id) => id !== memory.id))),
+    ).subscribe({
+      next: (response) => {
+        this.downloadResponse(response, `${memory.title || 'memoria'}.txt`);
+        this.toastr.success('Memoria exportada com sucesso.');
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  importMemoriesIntoCategory(category: Category, event: Event): void {
+    event.stopPropagation();
+
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+
+    if (files.length === 0 || this.importingCategoryIds().includes(category.id)) {
+      return;
+    }
+
+    this.importingCategoryIds.update((ids) => [...ids, category.id]);
+
+    this.categoriesApi.importMemories(category.id, files).pipe(
+      finalize(() => this.importingCategoryIds.update((ids) => ids.filter((id) => id !== category.id))),
+    ).subscribe({
+      next: (memories) => {
+        this.toastr.success(`${memories.length} memoria(s) importada(s) com sucesso.`);
+        this.loadMemories();
+        this.loadDashboardMemories();
+      },
+      error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
+    });
+  }
+
+  isExportingCategory(id: string): boolean {
+    return this.exportingCategoryIds().includes(id);
+  }
+
+  isExportingMemory(id: string): boolean {
+    return this.exportingMemoryIds().includes(id);
+  }
+
+  isImportingCategory(id: string): boolean {
+    return this.importingCategoryIds().includes(id);
   }
 
   closeDialog(): void {
@@ -1348,6 +1428,35 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     textarea.select();
     document.execCommand('copy');
     textarea.remove();
+  }
+
+  private downloadResponse(response: HttpResponse<Blob>, fallbackFilename: string): void {
+    const blob = response.body;
+
+    if (!blob) {
+      this.toastr.error('Arquivo de exportacao vazio.');
+      return;
+    }
+
+    const filename = this.filenameFromResponse(response) || fallbackFilename;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private filenameFromResponse(response: HttpResponse<Blob>): string | null {
+    const disposition = response.headers.get('Content-Disposition') ?? response.headers.get('content-disposition');
+    const filenameMatch = disposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+    return filename ? decodeURIComponent(filename) : null;
   }
 
   private htmlToText(value: string): string {

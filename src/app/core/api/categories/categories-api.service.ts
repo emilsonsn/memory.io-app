@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Category, CategoryPayload } from '../../../shared/models';
+import { Category, CategoryPayload, Memory } from '../../../shared/models';
+import { API_BASE_URL } from '../api.config';
 import { ApiClientService } from '../api-client.service';
 
 export interface CategoryListFilters {
@@ -12,7 +14,11 @@ export interface CategoryListFilters {
 
 @Injectable({ providedIn: 'root' })
 export class CategoriesApiService {
-  constructor(private readonly api: ApiClientService) {}
+  constructor(
+    private readonly api: ApiClientService,
+    private readonly http: HttpClient,
+    @Inject(API_BASE_URL) private readonly apiBaseUrl: string,
+  ) {}
 
   list(filters: CategoryListFilters = {}): Observable<Category[]> {
     const params: Record<string, string | number | boolean> = {
@@ -44,6 +50,23 @@ export class CategoriesApiService {
 
   update(id: string, payload: CategoryPayload): Observable<Category> {
     return this.api.patch<Category>(`/categories/${id}`, payload);
+  }
+
+  export(id: string): Observable<HttpResponse<Blob>> {
+    return this.http.post(`${this.apiBaseUrl}/categories/${id}/export`, {}, {
+      observe: 'response',
+      responseType: 'blob',
+    });
+  }
+
+  importMemories(id: string, files: File[]): Observable<Memory[]> {
+    const formData = new FormData();
+
+    for (const file of files) {
+      formData.append('files[]', file);
+    }
+
+    return this.api.post<Memory[]>(`/categories/${id}/import`, formData);
   }
 
   delete(id: string): Observable<null> {

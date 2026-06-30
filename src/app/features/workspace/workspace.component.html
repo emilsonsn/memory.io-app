@@ -367,6 +367,28 @@
           @if (quickSettingsOpen('category', category.id)) {
             <div class="quick-settings-menu" (click)="$event.stopPropagation()">
               <button type="button" (click)="editCategoryFromQuickSettings(category, $event)">Editar titulo e descricao</button>
+              <button type="button" [disabled]="isExportingCategory(category.id)" (click)="exportCategory(category, $event)">
+                @if (isExportingCategory(category.id)) {
+                  Exportando...
+                } @else {
+                  Exportar categoria
+                }
+              </button>
+              <button type="button" [disabled]="isImportingCategory(category.id)" (click)="categoryImportInput.click()">
+                @if (isImportingCategory(category.id)) {
+                  Importando...
+                } @else {
+                  Importar memorias
+                }
+              </button>
+              <input
+                #categoryImportInput
+                class="visually-hidden-file-input"
+                type="file"
+                accept=".md,.txt,text/markdown,text/plain"
+                multiple
+                (change)="importMemoriesIntoCategory(category, $event)"
+              >
               <span>Cor</span>
               <div class="color-swatch-row">
                 <button
@@ -498,6 +520,13 @@
           @if (quickSettingsOpen('memory', memory.id)) {
             <div class="quick-settings-menu" (click)="$event.stopPropagation()">
               <button type="button" (click)="editMemoryFromQuickSettings(memory, $event)">Editar titulo e descricao</button>
+              <button type="button" [disabled]="isExportingMemory(memory.id)" (click)="exportMemory(memory, $event)">
+                @if (isExportingMemory(memory.id)) {
+                  Exportando...
+                } @else {
+                  Exportar memoria
+                }
+              </button>
               <span>Cor</span>
               <div class="color-swatch-row">
                 <button
