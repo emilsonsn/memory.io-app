@@ -814,8 +814,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     request.subscribe({
       next: (memory) => {
         this.editingMemory.set(memory);
-        this.loadMemories();
-        this.loadDashboardMemories();
+        this.applySavedMemoryLocally(memory);
 
         if (this.expandMemoryAfterSave()) {
           this.expandMemoryAfterSave.set(false);
@@ -1184,6 +1183,130 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  private applySavedMemoryLocally(memory: Memory): void {
+    this.allMemories.update((memories) => this.upsertAndSortMemory(memories, memory, true));
+    this.memories.update((memories) => this.upsertAndSortMemory(memories, memory, this.memoryBelongsToCurrentView(memory)));
+  }
+
+  private upsertAndSortMemory(memories: Memory[], memory: Memory, shouldInclude: boolean): Memory[] {
+    const exists = memories.some((item) => item.id === memory.id);
+
+    if (!shouldInclude) {
+      return exists ? memories.filter((item) => item.id !== memory.id) : memories;
+    }
+
+    const nextMemories = exists
+      ? memories.map((item) => item.id === memory.id ? memory : item)
+      : [memory, ...memories];
+
+    return this.sortMemoriesForCurrentView(nextMemories);
+  }
+
+  private memoryBelongsToCurrentView(memory: Memory): boolean {
+    if (!this.matchesActiveMemoryFilters(memory)) {
+      return false;
+    }
+
+    if (this.hasMemoryFilters()) {
+      return true;
+    }
+
+    const categoryId = this.currentCategoryId();
+
+    return categoryId
+      ? memory.categories.some((category) => category.id === categoryId)
+      : memory.categories.length === 0;
+  }
+
+  private matchesActiveMemoryFilters(memory: Memory): boolean {
+    const filters = this.memoryFilters();
+
+    if (filters.text) {
+      const searchText = filters.text.trim().toLowerCase();
+      const memoryText = `${memory.title} ${this.htmlToText(memory.content)}`.toLowerCase();
+
+      if (searchText && !memoryText.includes(searchText)) {
+        return false;
+      }
+    }
+
+    if (filters.color && memory.color !== filters.color) {
+      return false;
+    }
+
+    if (filters.categoryPresence === 'without' && memory.categories.length > 0) {
+      return false;
+    }
+
+    if (filters.categoryIds?.length && !memory.categories.some((category) => filters.categoryIds?.includes(category.id))) {
+      return false;
+    }
+
+    return this.matchesDateRange(memory.created_at, filters.createdFrom, filters.createdTo)
+      && this.matchesDateRange(memory.updated_at, filters.updatedFrom, filters.updatedTo)
+      && this.matchesDateRange(memory.due_date, filters.dueFrom, filters.dueTo);
+  }
+
+  private matchesDateRange(value: string | null, from?: string, to?: string): boolean {
+    if (!from && !to) {
+      return true;
+    }
+
+    if (!value) {
+      return false;
+    }
+
+    const timestamp = new Date(value).getTime();
+
+    if (!Number.isFinite(timestamp)) {
+      return false;
+    }
+
+    if (from && timestamp < this.startOfDayTimestamp(from)) {
+      return false;
+    }
+
+    return !to || timestamp <= this.endOfDayTimestamp(to);
+  }
+
+  private sortMemoriesForCurrentView(memories: Memory[]): Memory[] {
+    const { sortBy = 'created_at', sortDirection = 'desc' } = this.memoryFilters();
+    const direction = sortDirection === 'asc' ? 1 : -1;
+
+    return [...memories].sort((left, right) => {
+      const comparison = this.compareMemoryField(left, right, sortBy);
+
+      if (comparison !== 0) {
+        return comparison * direction;
+      }
+
+      return right.created_at.localeCompare(left.created_at);
+    });
+  }
+
+  private compareMemoryField(left: Memory, right: Memory, sortBy: NonNullable<MemoryListFilters['sortBy']>): number {
+    if (sortBy === 'title') {
+      return left.title.localeCompare(right.title);
+    }
+
+    if (sortBy === 'color') {
+      return (left.color ?? '').localeCompare(right.color ?? '');
+    }
+
+    const leftTime = left[sortBy] ? new Date(left[sortBy] as string).getTime() : 0;
+    const rightTime = right[sortBy] ? new Date(right[sortBy] as string).getTime() : 0;
+
+    return leftTime - rightTime;
+  }
+
+  private startOfDayTimestamp(value: string): number {
+    return new Date(`${value}T00:00:00`).getTime();
+  }
+
+  private endOfDayTimestamp(value: string): number {
+    return new Date(`${value}T23:59:59.999`).getTime();
+  }
+
   saveExpandedMemoryIfNeeded(): boolean {
     if (this.expandedSaveInFlight) {
       this.expandedQueuedSave = true;
@@ -1220,8 +1343,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         }
 
         this.expandedAutosaveMemory = updatedMemory;
-        this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
-        this.allMemories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
+        this.applySavedMemoryLocally(updatedMemory);
         this.expandedLastSavedSnapshot = snapshot;
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
