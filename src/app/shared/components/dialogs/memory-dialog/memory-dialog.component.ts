@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faChevronDown, faCopy, faExpand, faTimes, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { QuillModule } from 'ngx-quill';
@@ -12,7 +13,7 @@ import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../.
   templateUrl: './memory-dialog.component.html',
   styleUrl: './memory-dialog.component.scss',
 })
-export class MemoryDialogComponent implements OnChanges {
+export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly toastr = inject(ToastrService);
 
@@ -30,6 +31,9 @@ export class MemoryDialogComponent implements OnChanges {
   advancedOpen = false;
   categoriesOpen = false;
   contentCopied = false;
+  private autosaveDebounce: number | null = null;
+  private formSubscription: Subscription | null = null;
+  private lastAutosaveSnapshot = '';
   readonly icons = {
     chevronDown: faChevronDown,
     copy: faCopy,
@@ -53,8 +57,23 @@ export class MemoryDialogComponent implements OnChanges {
     category_ids: this.fb.control<string[]>([]),
   });
 
+  ngOnInit(): void {
+    this.formSubscription = this.form.valueChanges.subscribe(() => {
+      this.queueAutosave();
+    });
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['memory'] || changes['defaultCategoryId'] || changes['defaultColor']) {
+    const memoryChanged = changes['memory'];
+    const previousMemory = memoryChanged?.previousValue as Memory | null | undefined;
+    const currentMemory = memoryChanged?.currentValue as Memory | null | undefined;
+    const shouldResetForm = Boolean(
+      changes['defaultCategoryId']
+      || changes['defaultColor']
+      || (memoryChanged && previousMemory?.id !== currentMemory?.id && !this.form.dirty)
+    );
+
+    if (shouldResetForm) {
       this.advancedOpen = false;
       this.categoriesOpen = false;
       this.contentCopied = false;
@@ -67,8 +86,16 @@ export class MemoryDialogComponent implements OnChanges {
         category_ids: this.memory
           ? this.memory.categories.map((category) => category.id)
           : this.defaultCategoryId ? [this.defaultCategoryId] : [],
+      }, {
+        emitEvent: false,
       });
+      this.lastAutosaveSnapshot = this.formSnapshot();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearAutosaveDebounce();
+    this.formSubscription?.unsubscribe();
   }
 
   toggleAdvanced(): void {
@@ -147,19 +174,17 @@ export class MemoryDialogComponent implements OnChanges {
       return;
     }
 
+    this.flushAutosave();
     this.expandMemory.emit(this.memoryPayload());
   }
 
   requestClose(): void {
+    this.flushAutosave();
     this.closeDialog.emit();
   }
 
   submit(): void {
-    if (this.form.invalid || this.saving) {
-      return;
-    }
-
-    this.saveMemory.emit(this.memoryPayload());
+    this.flushAutosave();
   }
 
   private memoryPayload(): MemoryPayload {
@@ -210,5 +235,43 @@ export class MemoryDialogComponent implements OnChanges {
     const container = document.createElement('div');
     container.innerHTML = value;
     return container.textContent ?? container.innerText ?? value;
+  }
+
+  private queueAutosave(): void {
+    this.clearAutosaveDebounce();
+    this.autosaveDebounce = window.setTimeout(() => {
+      this.autosaveDebounce = null;
+      this.flushAutosave();
+    }, 700);
+  }
+
+  private flushAutosave(): void {
+    this.clearAutosaveDebounce();
+
+    if (this.form.invalid) {
+      return;
+    }
+
+    const snapshot = this.formSnapshot();
+
+    if (snapshot === this.lastAutosaveSnapshot) {
+      return;
+    }
+
+    this.lastAutosaveSnapshot = snapshot;
+    this.saveMemory.emit(this.memoryPayload());
+  }
+
+  private formSnapshot(): string {
+    return JSON.stringify(this.form.getRawValue());
+  }
+
+  private clearAutosaveDebounce(): void {
+    if (this.autosaveDebounce === null) {
+      return;
+    }
+
+    window.clearTimeout(this.autosaveDebounce);
+    this.autosaveDebounce = null;
   }
 }

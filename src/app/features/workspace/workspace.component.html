@@ -170,9 +170,9 @@
 
       <div class="header-actions">
         @if (expandedMemory()) {
-          <button class="primary-button compact" type="button" [disabled]="saving() || expandedNoteForm.invalid" (click)="saveExpandedMemoryIfNeeded()">
-            {{ saving() ? 'Salvando...' : 'Salvar' }}
-          </button>
+          @if (expandedAutosaving()) {
+            <span class="autosave-status">Salvando...</span>
+          }
           <button class="ghost-button compact expanded-close-button" type="button" aria-label="Fechar nota" title="Fechar nota" (click)="closeExpandedMemory()">
             <fa-icon [icon]="icons.close" aria-hidden="true" />
           </button>

@@ -127,6 +127,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly expandedAutosaving = signal(false);
   readonly error = signal<string | null>(null);
   readonly activeDialog = signal<DialogType>(null);
   readonly currentCategoryId = signal<string | null>(null);
@@ -190,8 +191,14 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   });
 
   private searchDebounce: number | null = null;
+  private expandedAutosaveDebounce: number | null = null;
   private expandedLastSavedSnapshot = '';
+  private expandedSaveInFlight = false;
+  private expandedQueuedSave = false;
+  private expandedAutosaveMemory: Memory | null = null;
+  private queuedMemoryPayload: MemoryPayload | null = null;
   private routeSubscription: Subscription | null = null;
+  private expandedAutosaveSubscription: Subscription | null = null;
 
   readonly currentCategory = computed(() => {
     const categoryId = this.currentCategoryId();
@@ -264,6 +271,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.currentCategoryId.set(this.route.snapshot.paramMap.get('categoryId'));
     this.loadData();
+    this.expandedAutosaveSubscription = this.expandedNoteForm.valueChanges.subscribe(() => {
+      this.queueExpandedMemoryAutosave();
+    });
     this.routeSubscription = this.route.paramMap.subscribe((params) => {
       const categoryId = params.get('categoryId');
 
@@ -277,6 +287,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearExpandedAutosaveDebounce();
+    this.expandedAutosaveSubscription?.unsubscribe();
     this.routeSubscription?.unsubscribe();
   }
 
@@ -396,16 +408,27 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   openExpandedMemory(memory: Memory): void {
+    this.clearExpandedAutosaveDebounce();
+    this.expandedQueuedSave = false;
+    this.expandedAutosaveMemory = memory;
     this.expandedMemory.set(memory);
     this.expandedNoteForm.reset({
       title: memory.title,
       content: memory.content,
+    }, {
+      emitEvent: false,
     });
     this.expandedLastSavedSnapshot = this.expandedSnapshot();
   }
 
   closeExpandedMemory(): void {
+    const hasPendingSave = this.flushExpandedMemoryAutosave();
+
     this.expandedMemory.set(null);
+
+    if (!hasPendingSave) {
+      this.expandedAutosaveMemory = null;
+    }
   }
 
   toggleQuickSettings(type: QuickSettingsTarget['type'], id: string, event: Event): void {
@@ -774,9 +797,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   saveMemory(payload: MemoryPayload): void {
     if (this.saving()) {
+      this.queuedMemoryPayload = payload;
       return;
     }
 
+    this.queuedMemoryPayload = null;
     const finalPayload = this.memoryPayloadWithCurrentCategory(payload);
 
     this.saving.set(true);
@@ -788,10 +813,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
     request.subscribe({
       next: (memory) => {
-        this.editingMemory.set(memory);        
+        this.editingMemory.set(memory);
         this.loadMemories();
         this.loadDashboardMemories();
-        this.toastr.success(editing ? 'Memoria atualizada com sucesso.' : 'Memoria criada com sucesso.');
 
         if (this.expandMemoryAfterSave()) {
           this.expandMemoryAfterSave.set(false);
@@ -799,11 +823,17 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
           this.openExpandedMemory(memory);
           return;
         }
-
-        this.closeAfterSave();
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
-      complete: () => this.saving.set(false),
+      complete: () => {
+        this.saving.set(false);
+
+        const queuedPayload = this.queuedMemoryPayload;
+
+        if (queuedPayload) {
+          this.saveMemory(queuedPayload);
+        }
+      },
     });
   }
 
@@ -1154,17 +1184,22 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveExpandedMemoryIfNeeded(): void {
-    const memory = this.expandedMemory();
+  saveExpandedMemoryIfNeeded(): boolean {
+    if (this.expandedSaveInFlight) {
+      this.expandedQueuedSave = true;
+      return true;
+    }
 
-    if (!memory || this.expandedNoteForm.invalid || this.saving()) {
-      return;
+    const memory = this.expandedMemory() ?? this.expandedAutosaveMemory;
+
+    if (!memory || this.expandedNoteForm.invalid) {
+      return false;
     }
 
     const snapshot = this.expandedSnapshot();
 
     if (snapshot === this.expandedLastSavedSnapshot) {
-      return;
+      return false;
     }
 
     const value = this.expandedNoteForm.getRawValue();
@@ -1176,22 +1211,73 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       category_ids: memory.categories.map((category) => category.id),
     };
 
-    this.saving.set(true);
+    this.expandedSaveInFlight = true;
+    this.expandedAutosaving.set(true);
     this.memoriesApi.update(memory.id, payload).subscribe({
       next: (updatedMemory) => {
-        this.expandedMemory.set(updatedMemory);
+        if (this.expandedMemory()?.id === updatedMemory.id) {
+          this.expandedMemory.set(updatedMemory);
+        }
+
+        this.expandedAutosaveMemory = updatedMemory;
         this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
         this.allMemories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
         this.expandedLastSavedSnapshot = snapshot;
-        this.toastr.success('Memoria salva com sucesso.');
       },
       error: (error: HttpErrorResponse) => this.error.set(this.extractError(error)),
-      complete: () => this.saving.set(false),
+      complete: () => {
+        this.expandedSaveInFlight = false;
+
+        if (this.expandedQueuedSave) {
+          this.expandedQueuedSave = false;
+
+          if (this.saveExpandedMemoryIfNeeded()) {
+            return;
+          }
+        }
+
+        this.expandedAutosaving.set(false);
+
+        if (!this.expandedMemory()) {
+          this.expandedAutosaveMemory = null;
+        }
+      },
     });
+
+    return true;
   }
 
   private expandedSnapshot(): string {
     return JSON.stringify(this.expandedNoteForm.getRawValue());
+  }
+
+  private queueExpandedMemoryAutosave(): void {
+    if (!this.expandedMemory()) {
+      return;
+    }
+
+    this.clearExpandedAutosaveDebounce();
+    this.expandedAutosaveDebounce = window.setTimeout(() => {
+      this.expandedAutosaveDebounce = null;
+      this.saveExpandedMemoryIfNeeded();
+    }, 700);
+  }
+
+  private flushExpandedMemoryAutosave(): boolean {
+    this.clearExpandedAutosaveDebounce();
+
+    return this.saveExpandedMemoryIfNeeded()
+      || this.expandedSaveInFlight
+      || this.expandedQueuedSave;
+  }
+
+  private clearExpandedAutosaveDebounce(): void {
+    if (this.expandedAutosaveDebounce === null) {
+      return;
+    }
+
+    window.clearTimeout(this.expandedAutosaveDebounce);
+    this.expandedAutosaveDebounce = null;
   }
 
   private memoryPayloadWithCurrentCategory(payload: MemoryPayload): MemoryPayload {

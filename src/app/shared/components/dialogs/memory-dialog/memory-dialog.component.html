@@ -124,9 +124,9 @@
       </button>
 
       <div class="action-group">
-        <button class="primary-button" type="submit" [disabled]="saving || form.invalid">
-          {{ saving ? 'Salvando...' : 'Salvar' }}
-        </button>
+        @if (saving) {
+          <span class="autosave-status">Salvando...</span>
+        }
         <button class="primary-button" type="button" (click)="expandNote()">
           <fa-icon [icon]="icons.expand" aria-hidden="true" />
           Expandir
