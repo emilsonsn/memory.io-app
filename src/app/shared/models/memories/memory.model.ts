@@ -7,7 +7,8 @@ export interface Memory {
   content: string;
   color: NoteColor | null;
   due_date: string | null;
-  categories: Category[];
+  category_id: string | null;
+  category: Category | null;
   created_at: string;
   updated_at: string;
 }

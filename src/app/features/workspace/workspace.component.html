@@ -562,7 +562,7 @@
             <div class="memory-preview" [innerHTML]="memory.content"></div>
           </div>
           <div class="tag-row">
-            @for (category of memory.categories; track category.id) {
+            @if (memory.category; as category) {
               <span class="tag">{{ category.label }}</span>
             }
             @if (memory.due_date) {

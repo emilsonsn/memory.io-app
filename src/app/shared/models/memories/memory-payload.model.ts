@@ -5,5 +5,5 @@ export interface MemoryPayload {
   content: string;
   color: NoteColor | null;
   due_date: string | null;
-  category_ids: string[];
+  category_id: string | null;
 }
