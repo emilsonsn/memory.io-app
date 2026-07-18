@@ -72,43 +72,13 @@
         </div>
 
         <div class="category-field">
-          <span class="field-label">Categorias</span>
-
-          <button
-            class="category-select-trigger"
-            type="button"
-            [attr.aria-expanded]="categoriesOpen"
-            (click)="toggleCategories()"
-          >
-            <span>{{ categorySummary() }}</span>
-            <fa-icon class="select-chevron" [icon]="icons.chevronDown" aria-hidden="true" />
-          </button>
-
-          @if (categoriesOpen) {
-            <div class="category-select-panel">
-              @for (category of categories; track category.id) {
-                <label class="category-option">
-                  <input
-                    type="checkbox"
-                    [checked]="isCategorySelected(category.id)"
-                    (change)="toggleCategory(category.id)"
-                  >
-                  <span>{{ categoryDisplay(category) }}</span>
-                </label>
-              }
-            </div>
-          }
-
-          @if (selectedCategories().length > 0) {
-            <div class="selected-category-list" aria-label="Categorias selecionadas">
-              @for (category of selectedCategories(); track category.id) {
-                <button class="category-chip" type="button" (click)="toggleCategory(category.id)">
-                  <span>{{ categoryDisplay(category) }}</span>
-                  <fa-icon [icon]="icons.remove" aria-hidden="true" />
-                </button>
-              }
-            </div>
-          }
+          <label class="field-label" for="memory-category">Categoria</label>
+          <select id="memory-category" formControlName="category_id">
+            <option [ngValue]="null">Sem categoria</option>
+            @for (category of categories; track category.id) {
+              <option [ngValue]="category.id">{{ categoryDisplay(category) }}</option>
+            }
+          </select>
         </div>
       </section>
     }

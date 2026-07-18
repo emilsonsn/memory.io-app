@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, S
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faChevronDown, faCopy, faExpand, faTimes, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faExpand, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { QuillModule } from 'ngx-quill';
 import { ToastrService } from 'ngx-toastr';
 import { Category, ColorOption, Memory, MemoryPayload, NoteColor } from '../../../models';
@@ -29,16 +29,13 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
   @Output() expandMemory = new EventEmitter<MemoryPayload>();
 
   advancedOpen = false;
-  categoriesOpen = false;
   contentCopied = false;
   private autosaveDebounce: number | null = null;
   private formSubscription: Subscription | null = null;
   private lastAutosaveSnapshot = '';
   readonly icons = {
-    chevronDown: faChevronDown,
     copy: faCopy,
     expand: faExpand,
-    remove: faTimes,
     close: faXmark,
   };
   readonly compactEditorModules = {
@@ -54,7 +51,7 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
     content: ['', [Validators.required]],
     color: this.fb.control<NoteColor | null>(null),
     due_date: this.fb.control<string | null>(null),
-    category_ids: this.fb.control<string[]>([]),
+    category_id: this.fb.control<string | null>(null),
   });
 
   ngOnInit(): void {
@@ -75,7 +72,6 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
 
     if (shouldResetForm) {
       this.advancedOpen = false;
-      this.categoriesOpen = false;
       this.contentCopied = false;
 
       this.form.reset({
@@ -83,9 +79,7 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
         content: this.memory?.content ?? '',
         color: this.memory ? this.memory.color : this.defaultColor,
         due_date: this.toInputDate(this.memory?.due_date ?? null),
-        category_ids: this.memory
-          ? this.memory.categories.map((category) => category.id)
-          : this.defaultCategoryId ? [this.defaultCategoryId] : [],
+        category_id: this.memory ? this.memory.category_id : this.defaultCategoryId,
       }, {
         emitEvent: false,
       });
@@ -100,51 +94,12 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
 
   toggleAdvanced(): void {
     this.advancedOpen = !this.advancedOpen;
-
-    if (!this.advancedOpen) {
-      this.categoriesOpen = false;
-    }
-  }
-
-  toggleCategories(): void {
-    this.categoriesOpen = !this.categoriesOpen;
-  }
-
-  toggleCategory(categoryId: string): void {
-    const selectedIds = this.form.controls.category_ids.value ?? [];
-    const nextSelectedIds = selectedIds.includes(categoryId)
-      ? selectedIds.filter((selectedId) => selectedId !== categoryId)
-      : [...selectedIds, categoryId];
-
-    this.form.controls.category_ids.setValue(nextSelectedIds);
-    this.form.controls.category_ids.markAsDirty();
-    this.form.controls.category_ids.markAsTouched();
   }
 
   selectColor(color: NoteColor | null): void {
     this.form.controls.color.setValue(color);
     this.form.controls.color.markAsDirty();
     this.form.controls.color.markAsTouched();
-  }
-
-  isCategorySelected(categoryId: string): boolean {
-    return (this.form.controls.category_ids.value ?? []).includes(categoryId);
-  }
-
-  selectedCategories(): Category[] {
-    const selectedIds = this.form.controls.category_ids.value ?? [];
-
-    return this.categories.filter((category) => selectedIds.includes(category.id));
-  }
-
-  categorySummary(): string {
-    const total = this.selectedCategories().length;
-
-    if (total === 0) {
-      return 'Nenhuma categoria selecionada';
-    }
-
-    return total === 1 ? '1 categoria selecionada' : `${total} categorias selecionadas`;
   }
 
   categoryDisplay(category: Category): string {
@@ -195,7 +150,7 @@ export class MemoryDialogComponent implements OnChanges, OnDestroy, OnInit {
       content: value.content ?? '',
       color: value.color,
       due_date: value.due_date || null,
-      category_ids: value.category_ids ?? [],
+      category_id: value.category_id,
     };
   }
 

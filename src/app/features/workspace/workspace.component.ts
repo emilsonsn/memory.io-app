@@ -564,7 +564,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       content: memory.content,
       color,
       due_date: memory.due_date,
-      category_ids: memory.categories.map((category) => category.id),
+      category_id: memory.category_id,
     }).subscribe({
       next: (updatedMemory) => {
         this.memories.update((memories) => memories.map((item) => item.id === updatedMemory.id ? updatedMemory : item));
@@ -898,7 +898,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     const memory = this.draggedMemory();
     this.endItemDrag();
 
-    if (!memory || memory.categories.some((item) => item.id === category.id)) {
+    if (!memory || memory.category_id === category.id) {
       return;
     }
 
@@ -1214,8 +1214,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     const categoryId = this.currentCategoryId();
 
     return categoryId
-      ? memory.categories.some((category) => category.id === categoryId)
-      : memory.categories.length === 0;
+      ? memory.category_id === categoryId
+      : memory.category_id === null;
   }
 
   private matchesActiveMemoryFilters(memory: Memory): boolean {
@@ -1234,11 +1234,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    if (filters.categoryPresence === 'without' && memory.categories.length > 0) {
+    if (filters.categoryPresence === 'without' && memory.category_id !== null) {
       return false;
     }
 
-    if (filters.categoryIds?.length && !memory.categories.some((category) => filters.categoryIds?.includes(category.id))) {
+    if (filters.categoryIds?.length && (!memory.category_id || !filters.categoryIds.includes(memory.category_id))) {
       return false;
     }
 
@@ -1331,7 +1331,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       content: value.content ?? '',
       color: memory.color,
       due_date: memory.due_date,
-      category_ids: memory.categories.map((category) => category.id),
+      category_id: memory.category_id,
     };
 
     this.expandedSaveInFlight = true;
@@ -1407,7 +1407,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
     return this.editingMemory() || !currentCategoryId
       ? payload
-      : { ...payload, category_ids: Array.from(new Set([...payload.category_ids, currentCategoryId])) };
+      : { ...payload, category_id: currentCategoryId };
   }
 
   private memoryFromPayload(memory: Memory, payload: MemoryPayload): Memory {
@@ -1417,7 +1417,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       content: payload.content,
       color: payload.color,
       due_date: payload.due_date,
-      categories: this.categories().filter((category) => payload.category_ids.includes(category.id)),
+      category_id: payload.category_id,
+      category: payload.category_id
+        ? this.categories().find((category) => category.id === payload.category_id) ?? null
+        : null,
     };
   }
 
@@ -1459,7 +1462,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   private associateMemoryToCategory(memory: Memory, category: Category): void {
-    this.updateMemoryCategories(memory, category.id).subscribe({
+    this.updateMemoryCategory(memory, category.id).subscribe({
       next: () => {
         this.toastr.success('Nota associada a pasta com sucesso.');
         this.closeConfirmDialog();
@@ -1471,7 +1474,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   private associateMemoriesToCategory(memories: Memory[], category: Category, afterSave: () => void): void {
-    forkJoin(memories.map((memory) => this.updateMemoryCategories(memory, category.id))).subscribe({
+    forkJoin(memories.map((memory) => this.updateMemoryCategory(memory, category.id))).subscribe({
       next: () => {
         afterSave();
         this.loadMemories();
@@ -1481,15 +1484,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  private updateMemoryCategories(memory: Memory, categoryId: string) {
-    const categoryIds = Array.from(new Set([...memory.categories.map((category) => category.id), categoryId]));
-
+  private updateMemoryCategory(memory: Memory, categoryId: string) {
     return this.memoriesApi.update(memory.id, {
       title: memory.title,
       content: memory.content,
       color: memory.color,
       due_date: memory.due_date,
-      category_ids: categoryIds,
+      category_id: categoryId,
     });
   }
 
